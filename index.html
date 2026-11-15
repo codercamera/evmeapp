@@ -31,11 +31,12 @@
   .btn-outline { background: transparent; border: 1px solid #cbd5e1; color: #475569; }
   .btn-sm { padding: 8px 14px; font-size: 13px; }
 
-  .stats { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 20px; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
   @media (min-width: 640px) { .stats { grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; } }
   .stat-card { background: #fff; padding: 18px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
   .stat-card .label { font-size: 13px; color: #64748b; margin-bottom: 6px; }
-  .stat-card .value { font-size: 28px; font-weight: 700; }
+  .stat-card .value { font-size: 24px; font-weight: 700; }
+  @media (min-width: 640px) { .stat-card .value { font-size: 28px; } }
   .stat-card .value span { font-size: 14px; font-weight: 500; color: #64748b; }
 
   .table-wrap { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -122,6 +123,10 @@
       <div class="stat-card"><div class="label">Sessions</div><div class="value" id="totalCount">0</div></div>
       <div class="stat-card"><div class="label">Total Energy</div><div class="value" id="totalKwh">0 <span>kWh</span></div></div>
       <div class="stat-card"><div class="label">Total Cost</div><div class="value" id="totalCost">0 <span>THB</span></div></div>
+      <div class="stat-card"><div class="label">Avg ฿/kWh</div><div class="value" id="avgCostPerKwh">0 <span>THB</span></div></div>
+      <div class="stat-card"><div class="label">Avg kWh/Session</div><div class="value" id="avgKwh">0 <span>kWh</span></div></div>
+      <div class="stat-card"><div class="label">This Month</div><div class="value" id="monthCost">0 <span>THB</span></div></div>
+      <div class="stat-card"><div class="label">Most Used Vehicle</div><div class="value" id="topVehicle" style="font-size:18px;">-</div></div>
     </div>
   </div>
 
@@ -415,9 +420,38 @@ function updateStats() {
   const total = charges.length;
   const kwh = charges.reduce((s, c) => s + c.kwh, 0);
   const cost = charges.reduce((s, c) => s + c.cost, 0);
+
   document.getElementById('totalCount').textContent = total;
   document.getElementById('totalKwh').innerHTML = `${kwh.toFixed(1)} <span>kWh</span>`;
   document.getElementById('totalCost').innerHTML = `${cost.toLocaleString()} <span>THB</span>`;
+
+  const avgCostPerKwh = kwh > 0 ? (cost / kwh) : 0;
+  document.getElementById('avgCostPerKwh').innerHTML = `${avgCostPerKwh.toFixed(1)} <span>THB</span>`;
+
+  const avgKwh = total > 0 ? (kwh / total) : 0;
+  document.getElementById('avgKwh').innerHTML = `${avgKwh.toFixed(1)} <span>kWh</span>`;
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const monthPrefix = `${year}-${month}`;
+  const monthCharges = charges.filter(c => c.date.startsWith(monthPrefix));
+  const monthCost = monthCharges.reduce((s, c) => s + c.cost, 0);
+  document.getElementById('monthCost').innerHTML = `${monthCost.toLocaleString()} <span>THB</span>`;
+
+  const vehicleCounts = {};
+  charges.forEach(c => {
+    vehicleCounts[c.car] = (vehicleCounts[c.car] || 0) + 1;
+  });
+  let topVehicle = '-';
+  let maxCount = 0;
+  for (const [v, count] of Object.entries(vehicleCounts)) {
+    if (count > maxCount) {
+      maxCount = count;
+      topVehicle = v;
+    }
+  }
+  document.getElementById('topVehicle').textContent = topVehicle;
 }
 
 function openChargeModal() {
