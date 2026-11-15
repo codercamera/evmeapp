@@ -307,17 +307,31 @@ function save() {
   localStorage.setItem('ev_charges', JSON.stringify(charges));
 }
 
-function switchPage(page) {
+function switchPage(page, updateHash = true) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
+  const pageEl = document.getElementById('page-' + page);
+  if (pageEl) pageEl.classList.add('active');
 
   document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
   const navBtn = document.getElementById('nav-' + page);
   if (navBtn) navBtn.classList.add('active');
 
+  if (updateHash && location.hash !== '#' + page) {
+    location.hash = page;
+  }
+
   if (page === 'vehicles') renderVehicleList();
   if (page === 'charge' || page === 'summary') render();
 }
+
+function handleHash() {
+  const page = (location.hash.slice(1) || 'summary');
+  const valid = ['summary', 'charge', 'settings', 'vehicles'];
+  switchPage(valid.includes(page) ? page : 'summary', false);
+}
+
+window.addEventListener('hashchange', handleHash);
+window.addEventListener('DOMContentLoaded', handleHash);
 
 function updateVehicleSelect() {
   const sel = document.getElementById('fCar');
@@ -622,7 +636,7 @@ function addCharge() {
 }
 
 updateVehicleSelect();
-render();
+handleHash();
 </script>
 </body>
 </html>
