@@ -109,6 +109,16 @@
 
   .subpage-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
   .back-btn { background: transparent; border: none; padding: 8px; cursor: pointer; color: #0d9488; }
+
+  .charge-cards { display: none; }
+  @media (max-width: 767px) {
+    .table-wrap { display: none; }
+    .charge-cards { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  }
+  .charge-card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .charge-card .row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px; }
+  .charge-card .row .label { color: #64748b; }
+  .charge-card .title { font-weight: 600; font-size: 15px; margin-bottom: 8px; }
 </style>
 </head>
 <body>
@@ -164,6 +174,7 @@
       </table>
       <div class="empty" id="emptyMsg" style="display:none;">No charge records yet</div>
     </div>
+    <div class="charge-cards" id="chargeCards"></div>
   </div>
 
   <div id="page-settings" class="page">
@@ -413,8 +424,10 @@ function removeVehicle(index) {
 function renderChargeTable(tbodyId, emptyId) {
   const tbody = document.getElementById(tbodyId);
   const empty = document.getElementById(emptyId);
+  const cards = document.getElementById('chargeCards');
   if (!tbody) return;
   tbody.innerHTML = '';
+  if (cards) cards.innerHTML = '';
 
   if (charges.length === 0) {
     empty.style.display = 'block';
@@ -433,6 +446,20 @@ function renderChargeTable(tbodyId, emptyId) {
       <td><span class="badge badge-done">Completed</span></td>
     `;
     tbody.appendChild(tr);
+
+    if (cards) {
+      const card = document.createElement('div');
+      card.className = 'charge-card';
+      card.innerHTML = `
+        <div class="title">${c.station}</div>
+        <div class="row"><span class="label">Date</span><span>${c.date}</span></div>
+        <div class="row"><span class="label">Vehicle</span><span>${c.car}</span></div>
+        <div class="row"><span class="label">Energy</span><span>${c.kwh.toFixed(1)} kWh</span></div>
+        <div class="row"><span class="label">Cost</span><span>${c.cost.toLocaleString()} THB</span></div>
+        <div class="row"><span class="label">Status</span><span class="badge badge-done">Completed</span></div>
+      `;
+      cards.appendChild(card);
+    }
   });
 }
 
