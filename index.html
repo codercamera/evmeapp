@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>ระบบบันทึกการชาร์จรถไฟฟ้า EV</title>
+<title>EV Charge Log</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
   body { background: #f4f6f9; color: #1e293b; -webkit-tap-highlight-color: transparent; padding-bottom: 72px; }
@@ -87,40 +87,40 @@
 <body>
 <div class="container">
   <header>
-    <h1>ระบบ<span>บันทึกการชาร์จ</span> EV</h1>
+    <h1>EV <span>Charge Log</span></h1>
     <div class="desktop-nav">
-      <button class="btn btn-sm btn-outline" onclick="switchPage('summary')">หน้าสรุป</button>
-      <button class="btn btn-sm btn-outline" onclick="switchPage('vehicles')">จัดการรถ</button>
-      <button class="btn" onclick="openModal()">+ เพิ่มรายการชาร์จ</button>
+      <button class="btn btn-sm btn-outline" onclick="switchPage('summary')">Summary</button>
+      <button class="btn btn-sm btn-outline" onclick="switchPage('vehicles')">Vehicles</button>
+      <button class="btn" onclick="openModal()">+ Add Charge</button>
     </div>
   </header>
 
   <div id="page-summary" class="page active">
     <div class="stats">
-      <div class="stat-card"><div class="label">จำนวนครั้ง</div><div class="value" id="totalCount">0</div></div>
-      <div class="stat-card"><div class="label">ปริมาณไฟรวม</div><div class="value" id="totalKwh">0 <span>kWh</span></div></div>
-      <div class="stat-card"><div class="label">ค่าใช้จ่ายรวม</div><div class="value" id="totalCost">0 <span>บาท</span></div></div>
+      <div class="stat-card"><div class="label">Sessions</div><div class="value" id="totalCount">0</div></div>
+      <div class="stat-card"><div class="label">Total Energy</div><div class="value" id="totalKwh">0 <span>kWh</span></div></div>
+      <div class="stat-card"><div class="label">Total Cost</div><div class="value" id="totalCost">0 <span>THB</span></div></div>
     </div>
 
     <div class="table-wrap">
       <table>
-        <thead><tr><th>วันที่</th><th>สถานี</th><th>รถ</th><th>kWh</th><th>ค่าใช้จ่าย</th><th>สถานะ</th></tr></thead>
+        <thead><tr><th>Date</th><th>Station</th><th>Vehicle</th><th>kWh</th><th>Cost</th><th>Status</th></tr></thead>
         <tbody id="chargeList"></tbody>
       </table>
-      <div class="empty" id="emptyMsg" style="display:none;">ยังไม่มีรายการชาร์จ</div>
+      <div class="empty" id="emptyMsg" style="display:none;">No charge records yet</div>
     </div>
 
     <div style="margin-top:16px;">
-      <button class="btn full" onclick="openModal()">+ เพิ่มรายการชาร์จ</button>
+      <button class="btn full" onclick="openModal()">+ Add Charge</button>
     </div>
   </div>
 
   <div id="page-vehicles" class="page">
     <div class="form-group">
-      <label>ชื่อรถใหม่</label>
+      <label>New Vehicle</label>
       <div class="vehicle-row">
-        <input type="text" id="newVehicle" placeholder="เช่น Tesla Model 3">
-        <button class="btn btn-sm" onclick="addVehicle()">เพิ่ม</button>
+        <input type="text" id="newVehicle" placeholder="e.g. Tesla Model 3">
+        <button class="btn btn-sm" onclick="addVehicle()">Add</button>
       </div>
     </div>
     <div id="vehicleList" style="margin-top:16px; background:#fff; border-radius:12px; padding:8px 16px; box-shadow:0 1px 3px rgba(0,0,0,.08);"></div>
@@ -130,47 +130,47 @@
 <nav class="bottom-nav">
   <button id="nav-summary" class="active" onclick="switchPage('summary')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    หน้าสรุป
+    Summary
   </button>
   <button id="nav-vehicles" onclick="switchPage('vehicles')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-    จัดการรถ
+    Vehicles
   </button>
 </nav>
 
 <div class="modal" id="modal">
   <div class="modal-box">
-    <h2>เพิ่มรายการชาร์จ</h2>
+    <h2>Add Charge</h2>
     <div class="form-group">
-      <label>วันที่</label>
+      <label>Date</label>
       <input type="date" id="fDate">
     </div>
     <div class="form-group">
-      <label>สถานีชาร์จ</label>
-      <input type="text" id="fStation" placeholder="เช่น EA สาขาสยาม">
+      <label>Station</label>
+      <input type="text" id="fStation" placeholder="e.g. EA Siam">
     </div>
     <div class="form-group">
-      <label>รถ</label>
+      <label>Vehicle</label>
       <select id="fCar"></select>
     </div>
     <div class="form-group">
-      <label>ปริมาณไฟ (kWh)</label>
+      <label>Energy (kWh)</label>
       <input type="number" id="fKwh" step="0.1" placeholder="0.0" inputmode="decimal">
     </div>
     <div class="form-group">
-      <label>ค่าใช้จ่าย (บาท)</label>
+      <label>Cost (THB)</label>
       <input type="number" id="fCost" placeholder="0" inputmode="numeric">
     </div>
     <div class="form-actions">
-      <button class="btn btn-outline" onclick="closeModal()">ยกเลิก</button>
-      <button class="btn" onclick="addCharge()">บันทึก</button>
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="addCharge()">Save</button>
     </div>
   </div>
 </div>
 
 <script>
 let vehicles = JSON.parse(localStorage.getItem('ev_vehicles') || '["Tesla Model Y","BYD Atto 3","ORA Good Cat","MG4 Electric"]');
-let charges = JSON.parse(localStorage.getItem('ev_charges') || '[{"date":"2026-11-14","station":"EA สาขาสยาม","car":"Tesla Model Y","kwh":42.5,"cost":320},{"date":"2026-11-12","station":"Sharge+ เซ็นทรัลเวิลด์","car":"BYD Atto 3","kwh":38.2,"cost":285},{"date":"2026-11-10","station":"PTT บางจาก","car":"ORA Good Cat","kwh":29.8,"cost":210}]');
+let charges = JSON.parse(localStorage.getItem('ev_charges') || '[{"date":"2026-11-14","station":"EA Siam","car":"Tesla Model Y","kwh":42.5,"cost":320},{"date":"2026-11-12","station":"Sharge+ Central World","car":"BYD Atto 3","kwh":38.2,"cost":285},{"date":"2026-11-10","station":"PTT Bang Chak","car":"ORA Good Cat","kwh":29.8,"cost":210}]');
 
 function save() {
   localStorage.setItem('ev_vehicles', JSON.stringify(vehicles));
@@ -197,15 +197,15 @@ function renderVehicleList() {
   list.innerHTML = vehicles.map((v, i) => `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f1f5f9;">
       <span>${v}</span>
-      <button class="btn btn-sm btn-outline" onclick="removeVehicle(${i})">ลบ</button>
+      <button class="btn btn-sm btn-outline" onclick="removeVehicle(${i})">Delete</button>
     </div>
-  `).join('') || '<div style="color:#94a3b8;font-size:14px;padding:16px;text-align:center;">ยังไม่มีรถ</div>';
+  `).join('') || '<div style="color:#94a3b8;font-size:14px;padding:16px;text-align:center;">No vehicles yet</div>';
 }
 
 function addVehicle() {
   const name = document.getElementById('newVehicle').value.trim();
-  if (!name) return alert('กรุณาใส่ชื่อรถ');
-  if (vehicles.includes(name)) return alert('มีรถนี้อยู่แล้ว');
+  if (!name) return alert('Please enter a vehicle name');
+  if (vehicles.includes(name)) return alert('This vehicle already exists');
   vehicles.push(name);
   document.getElementById('newVehicle').value = '';
   save();
@@ -214,7 +214,7 @@ function addVehicle() {
 }
 
 function removeVehicle(index) {
-  if (!confirm('ลบรถนี้?')) return;
+  if (!confirm('Delete this vehicle?')) return;
   vehicles.splice(index, 1);
   save();
   updateVehicleSelect();
@@ -241,7 +241,7 @@ function render() {
       <td>${c.car}</td>
       <td>${c.kwh.toFixed(1)}</td>
       <td>${c.cost.toLocaleString()}</td>
-      <td><span class="badge badge-done">เสร็จสิ้น</span></td>
+      <td><span class="badge badge-done">Completed</span></td>
     `;
     tbody.appendChild(tr);
   });
@@ -254,7 +254,7 @@ function updateStats() {
   const cost = charges.reduce((s, c) => s + c.cost, 0);
   document.getElementById('totalCount').textContent = total;
   document.getElementById('totalKwh').innerHTML = `${kwh.toFixed(1)} <span>kWh</span>`;
-  document.getElementById('totalCost').innerHTML = `${cost.toLocaleString()} <span>บาท</span>`;
+  document.getElementById('totalCost').innerHTML = `${cost.toLocaleString()} <span>THB</span>`;
 }
 
 function openModal() {
@@ -276,7 +276,7 @@ function addCharge() {
   const cost = parseFloat(document.getElementById('fCost').value);
 
   if (!date || !station || !car || isNaN(kwh) || isNaN(cost)) {
-    alert('กรุณากรอกข้อมูลให้ครบ');
+    alert('Please fill in all fields');
     return;
   }
 
