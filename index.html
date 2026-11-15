@@ -8,31 +8,24 @@
   * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
   body { background: #f4f6f9; color: #1e293b; -webkit-tap-highlight-color: transparent; }
   .container { max-width: 1100px; margin: 0 auto; padding: 16px; }
-  @media (min-width: 768px) {
-    .container { padding: 24px; }
-  }
+  @media (min-width: 768px) { .container { padding: 24px; } }
 
   header { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
   @media (min-width: 640px) {
     header { flex-direction: row; justify-content: space-between; align-items: center; margin-bottom: 28px; }
   }
   header h1 { font-size: 22px; font-weight: 700; line-height: 1.3; }
-  @media (min-width: 640px) {
-    header h1 { font-size: 24px; }
-  }
+  @media (min-width: 640px) { header h1 { font-size: 24px; } }
   header h1 span { color: #0d9488; }
 
-  .btn { background: #0d9488; color: #fff; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-size: 15px; font-weight: 500; width: 100%; }
-  @media (min-width: 640px) {
-    .btn { width: auto; padding: 10px 18px; font-size: 14px; }
-  }
+  .btn { background: #0d9488; color: #fff; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-size: 15px; font-weight: 500; }
+  @media (max-width: 639px) { .btn { width: 100%; } }
   .btn:hover { background: #0f766e; }
   .btn-outline { background: transparent; border: 1px solid #cbd5e1; color: #475569; }
+  .btn-sm { padding: 8px 14px; font-size: 13px; }
 
   .stats { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 20px; }
-  @media (min-width: 640px) {
-    .stats { grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
-  }
+  @media (min-width: 640px) { .stats { grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; } }
   .stat-card { background: #fff; padding: 18px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
   .stat-card .label { font-size: 13px; color: #64748b; margin-bottom: 6px; }
   .stat-card .value { font-size: 28px; font-weight: 700; }
@@ -47,15 +40,11 @@
   .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; }
   .badge-done { background: #d1fae5; color: #065f46; }
 
-  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); align-items: flex-end; justify-content: center; z-index: 100; padding: 0; }
-  @media (min-width: 640px) {
-    .modal { align-items: center; padding: 16px; }
-  }
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); align-items: flex-end; justify-content: center; z-index: 100; }
+  @media (min-width: 640px) { .modal { align-items: center; padding: 16px; } }
   .modal.show { display: flex; }
   .modal-box { background: #fff; width: 100%; max-width: 480px; border-radius: 16px 16px 0 0; padding: 20px; max-height: 90vh; overflow-y: auto; }
-  @media (min-width: 640px) {
-    .modal-box { border-radius: 12px; padding: 24px; max-height: none; }
-  }
+  @media (min-width: 640px) { .modal-box { border-radius: 12px; padding: 24px; } }
   .modal-box h2 { font-size: 18px; margin-bottom: 16px; }
   .form-group { margin-bottom: 14px; }
   .form-group label { display: block; font-size: 13px; margin-bottom: 6px; color: #475569; font-weight: 500; }
@@ -63,6 +52,8 @@
   .form-actions { display: flex; gap: 10px; margin-top: 20px; }
   .form-actions .btn { flex: 1; }
 
+  .vehicle-row { display: flex; gap: 8px; align-items: center; }
+  .vehicle-row select { flex: 1; }
   .empty { text-align: center; padding: 40px 16px; color: #94a3b8; }
 </style>
 </head>
@@ -70,42 +61,28 @@
 <div class="container">
   <header>
     <h1>ระบบ<span>บันทึกการชาร์จ</span> EV</h1>
-    <button class="btn" onclick="openModal()">+ เพิ่มรายการชาร์จ</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-sm btn-outline" onclick="openVehicleModal()">จัดการรถ</button>
+      <button class="btn" onclick="openModal()">+ เพิ่มรายการชาร์จ</button>
+    </div>
   </header>
 
   <div class="stats">
-    <div class="stat-card">
-      <div class="label">จำนวนครั้ง</div>
-      <div class="value" id="totalCount">0</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">ปริมาณไฟรวม</div>
-      <div class="value" id="totalKwh">0 <span>kWh</span></div>
-    </div>
-    <div class="stat-card">
-      <div class="label">ค่าใช้จ่ายรวม</div>
-      <div class="value" id="totalCost">0 <span>บาท</span></div>
-    </div>
+    <div class="stat-card"><div class="label">จำนวนครั้ง</div><div class="value" id="totalCount">0</div></div>
+    <div class="stat-card"><div class="label">ปริมาณไฟรวม</div><div class="value" id="totalKwh">0 <span>kWh</span></div></div>
+    <div class="stat-card"><div class="label">ค่าใช้จ่ายรวม</div><div class="value" id="totalCost">0 <span>บาท</span></div></div>
   </div>
 
   <div class="table-wrap">
     <table>
-      <thead>
-        <tr>
-          <th>วันที่</th>
-          <th>สถานี</th>
-          <th>รถ</th>
-          <th>kWh</th>
-          <th>ค่าใช้จ่าย</th>
-          <th>สถานะ</th>
-        </tr>
-      </thead>
+      <thead><tr><th>วันที่</th><th>สถานี</th><th>รถ</th><th>kWh</th><th>ค่าใช้จ่าย</th><th>สถานะ</th></tr></thead>
       <tbody id="chargeList"></tbody>
     </table>
     <div class="empty" id="emptyMsg" style="display:none;">ยังไม่มีรายการชาร์จ</div>
   </div>
 </div>
 
+<!-- Modal เพิ่มรายการชาร์จ -->
 <div class="modal" id="modal">
   <div class="modal-box">
     <h2>เพิ่มรายการชาร์จ</h2>
@@ -119,12 +96,10 @@
     </div>
     <div class="form-group">
       <label>รถ</label>
-      <select id="fCar">
-        <option>Tesla Model Y</option>
-        <option>BYD Atto 3</option>
-        <option>ORA Good Cat</option>
-        <option>MG4 Electric</option>
-      </select>
+      <div class="vehicle-row">
+        <select id="fCar"></select>
+        <button type="button" class="btn btn-sm btn-outline" onclick="openVehicleModal()">+</button>
+      </div>
     </div>
     <div class="form-group">
       <label>ปริมาณไฟ (kWh)</label>
@@ -141,12 +116,66 @@
   </div>
 </div>
 
+<!-- Modal จัดการรถ -->
+<div class="modal" id="vehicleModal">
+  <div class="modal-box">
+    <h2>จัดการรถ</h2>
+    <div class="form-group">
+      <label>ชื่อรถใหม่</label>
+      <div class="vehicle-row">
+        <input type="text" id="newVehicle" placeholder="เช่น Tesla Model 3">
+        <button class="btn btn-sm" onclick="addVehicle()">เพิ่ม</button>
+      </div>
+    </div>
+    <div id="vehicleList" style="margin-top:16px;"></div>
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="closeVehicleModal()">ปิด</button>
+    </div>
+  </div>
+</div>
+
 <script>
-let charges = [
-  { date: '2026-11-14', station: 'EA สาขาสยาม', car: 'Tesla Model Y', kwh: 42.5, cost: 320 },
-  { date: '2026-11-12', station: 'Sharge+ เซ็นทรัลเวิลด์', car: 'BYD Atto 3', kwh: 38.2, cost: 285 },
-  { date: '2026-11-10', station: 'PTT บางจาก', car: 'ORA Good Cat', kwh: 29.8, cost: 210 },
-];
+let vehicles = JSON.parse(localStorage.getItem('ev_vehicles') || '["Tesla Model Y","BYD Atto 3","ORA Good Cat","MG4 Electric"]');
+let charges = JSON.parse(localStorage.getItem('ev_charges') || '[{"date":"2026-11-14","station":"EA สาขาสยาม","car":"Tesla Model Y","kwh":42.5,"cost":320},{"date":"2026-11-12","station":"Sharge+ เซ็นทรัลเวิลด์","car":"BYD Atto 3","kwh":38.2,"cost":285},{"date":"2026-11-10","station":"PTT บางจาก","car":"ORA Good Cat","kwh":29.8,"cost":210}]');
+
+function save() {
+  localStorage.setItem('ev_vehicles', JSON.stringify(vehicles));
+  localStorage.setItem('ev_charges', JSON.stringify(charges));
+}
+
+function updateVehicleSelect() {
+  const sel = document.getElementById('fCar');
+  sel.innerHTML = vehicles.map(v => `<option>${v}</option>`).join('');
+}
+
+function renderVehicleList() {
+  const list = document.getElementById('vehicleList');
+  list.innerHTML = vehicles.map((v, i) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;">
+      <span>${v}</span>
+      <button class="btn btn-sm btn-outline" onclick="removeVehicle(${i})">ลบ</button>
+    </div>
+  `).join('') || '<div style="color:#94a3b8;font-size:14px;">ยังไม่มีรถ</div>';
+}
+
+function addVehicle() {
+  const name = document.getElementById('newVehicle').value.trim();
+  if (!name) return alert('กรุณาใส่ชื่อรถ');
+  if (vehicles.includes(name)) return alert('มีรถนี้อยู่แล้ว');
+  vehicles.push(name);
+  document.getElementById('newVehicle').value = '';
+  save();
+  updateVehicleSelect();
+  renderVehicleList();
+}
+
+function removeVehicle(index) {
+  if (!confirm('ลบรถนี้?')) return;
+  vehicles.splice(index, 1);
+  save();
+  updateVehicleSelect();
+  renderVehicleList();
+}
 
 function render() {
   const tbody = document.getElementById('chargeList');
@@ -185,12 +214,23 @@ function updateStats() {
 }
 
 function openModal() {
+  updateVehicleSelect();
   document.getElementById('modal').classList.add('show');
   document.getElementById('fDate').valueAsDate = new Date();
   document.body.style.overflow = 'hidden';
 }
 function closeModal() {
   document.getElementById('modal').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function openVehicleModal() {
+  renderVehicleList();
+  document.getElementById('vehicleModal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closeVehicleModal() {
+  document.getElementById('vehicleModal').classList.remove('show');
   document.body.style.overflow = '';
 }
 
@@ -201,12 +241,13 @@ function addCharge() {
   const kwh = parseFloat(document.getElementById('fKwh').value);
   const cost = parseFloat(document.getElementById('fCost').value);
 
-  if (!date || !station || isNaN(kwh) || isNaN(cost)) {
+  if (!date || !station || !car || isNaN(kwh) || isNaN(cost)) {
     alert('กรุณากรอกข้อมูลให้ครบ');
     return;
   }
 
   charges.unshift({ date, station, car, kwh, cost });
+  save();
   closeModal();
   render();
 
@@ -215,6 +256,7 @@ function addCharge() {
   document.getElementById('fCost').value = '';
 }
 
+updateVehicleSelect();
 render();
 </script>
 </body>
