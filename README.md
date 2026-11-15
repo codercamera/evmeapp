@@ -1,24 +1,27 @@
 # EV Charge Manager
 
-ม็อคอัป HTML ของระบบบันทึกและจัดการการชาร์จรถไฟฟ้า EV
+An HTML mockup for logging and managing electric vehicle (EV) charging sessions.
 
-## คุณสมบัติ
+## Features
 
-- ดูรายการชาร์จทั้งหมด
-- สถิติสรุป (จำนวนครั้ง, ปริมาณไฟรวม, ค่าใช้จ่ายรวม)
-- เพิ่มรายการใหม่ผ่านฟอร์ม
-- ตารางรายการแบบเรียลไทม์
+- View all charging sessions
+- Summary statistics (session count, total energy in kWh, total cost)
+- Add new sessions via a form
+- Real-time session table
+- Manage vehicles (add/delete)
+- Mobile-friendly with bottom navigation
+- Data persisted in localStorage
 
-## วิธีใช้
+## How to Use
 
-1. โอปนไฟล์ `index.html` ในเบราว์เซอร์
-2. หรือ deploy ผ่าน Netlify / Vercel / GitHub Pages
+1. Open `index.html` in a browser
+2. Or deploy via Netlify / Vercel / GitHub Pages
 
-## โครงสร้าง
+## Structure
 
 ```
 evmeapp/
-└── index.html   # หน้าหลักของระบบ
+└── index.html   # Main app file
 ```
 
-สร้างด้วย Grok
+Built with Grok
