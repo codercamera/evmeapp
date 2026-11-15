@@ -80,7 +80,6 @@
   .form-actions { display: flex; gap: 10px; margin-top: 20px; }
   .form-actions .btn { flex: 1; }
 
-  .charge-form { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); max-width: 480px; }
   .vehicle-card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
   .vehicle-card .title { font-weight: 600; font-size: 16px; margin-bottom: 4px; }
   .vehicle-card .meta { font-size: 13px; color: #64748b; }
@@ -109,39 +108,22 @@
     <div class="table-wrap">
       <table>
         <thead><tr><th>Date</th><th>Station</th><th>Vehicle</th><th>kWh</th><th>Cost</th><th>Status</th></tr></thead>
-        <tbody id="chargeList"></tbody>
+        <tbody id="summaryChargeList"></tbody>
       </table>
-      <div class="empty" id="emptyMsg" style="display:none;">No charge records yet</div>
+      <div class="empty" id="summaryEmptyMsg" style="display:none;">No charge records yet</div>
     </div>
   </div>
 
   <div id="page-charge" class="page">
-    <div class="charge-form">
-      <h2 style="margin-bottom:16px; font-size:18px;">Add Charge</h2>
-      <div class="form-group">
-        <label>Date</label>
-        <input type="date" id="fDate">
-      </div>
-      <div class="form-group">
-        <label>Station</label>
-        <input type="text" id="fStation" placeholder="e.g. EA Siam">
-      </div>
-      <div class="form-group">
-        <label>Vehicle</label>
-        <select id="fCar"></select>
-      </div>
-      <div class="form-group">
-        <label>Energy (kWh)</label>
-        <input type="number" id="fKwh" step="0.1" placeholder="0.0" inputmode="decimal">
-      </div>
-      <div class="form-group">
-        <label>Cost (THB)</label>
-        <input type="number" id="fCost" placeholder="0" inputmode="numeric">
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-outline" onclick="clearChargeForm()">Clear</button>
-        <button class="btn" onclick="addCharge()">Save</button>
-      </div>
+    <div style="margin-bottom:16px;">
+      <button class="btn" onclick="openChargeModal()">+ Add Charge</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Date</th><th>Station</th><th>Vehicle</th><th>kWh</th><th>Cost</th><th>Status</th></tr></thead>
+        <tbody id="chargeList"></tbody>
+      </table>
+      <div class="empty" id="emptyMsg" style="display:none;">No charge records yet</div>
     </div>
   </div>
 
@@ -167,6 +149,36 @@
     Vehicles
   </button>
 </nav>
+
+<div class="modal" id="chargeModal">
+  <div class="modal-box">
+    <h2>Add Charge</h2>
+    <div class="form-group">
+      <label>Date</label>
+      <input type="date" id="fDate">
+    </div>
+    <div class="form-group">
+      <label>Station</label>
+      <input type="text" id="fStation" placeholder="e.g. EA Siam">
+    </div>
+    <div class="form-group">
+      <label>Vehicle</label>
+      <select id="fCar"></select>
+    </div>
+    <div class="form-group">
+      <label>Energy (kWh)</label>
+      <input type="number" id="fKwh" step="0.1" placeholder="0.0" inputmode="decimal">
+    </div>
+    <div class="form-group">
+      <label>Cost (THB)</label>
+      <input type="number" id="fCost" placeholder="0" inputmode="numeric">
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="closeChargeModal()">Cancel</button>
+      <button class="btn" onclick="addCharge()">Save</button>
+    </div>
+  </div>
+</div>
 
 <div class="modal" id="vehicleModal">
   <div class="modal-box">
@@ -233,10 +245,7 @@ function switchPage(page) {
   if (navBtn) navBtn.classList.add('active');
 
   if (page === 'vehicles') renderVehicleList();
-  if (page === 'charge') {
-    updateVehicleSelect();
-    document.getElementById('fDate').valueAsDate = new Date();
-  }
+  if (page === 'charge' || page === 'summary') render();
 }
 
 function updateVehicleSelect() {
@@ -341,14 +350,14 @@ function removeVehicle(index) {
   renderVehicleList();
 }
 
-function render() {
-  const tbody = document.getElementById('chargeList');
-  const empty = document.getElementById('emptyMsg');
+function renderChargeTable(tbodyId, emptyId) {
+  const tbody = document.getElementById(tbodyId);
+  const empty = document.getElementById(emptyId);
+  if (!tbody) return;
   tbody.innerHTML = '';
 
   if (charges.length === 0) {
     empty.style.display = 'block';
-    updateStats();
     return;
   }
   empty.style.display = 'none';
@@ -365,6 +374,11 @@ function render() {
     `;
     tbody.appendChild(tr);
   });
+}
+
+function render() {
+  renderChargeTable('summaryChargeList', 'summaryEmptyMsg');
+  renderChargeTable('chargeList', 'emptyMsg');
   updateStats();
 }
 
@@ -377,11 +391,15 @@ function updateStats() {
   document.getElementById('totalCost').innerHTML = `${cost.toLocaleString()} <span>THB</span>`;
 }
 
-function clearChargeForm() {
-  document.getElementById('fStation').value = '';
-  document.getElementById('fKwh').value = '';
-  document.getElementById('fCost').value = '';
+function openChargeModal() {
+  updateVehicleSelect();
+  document.getElementById('chargeModal').classList.add('show');
   document.getElementById('fDate').valueAsDate = new Date();
+  document.body.style.overflow = 'hidden';
+}
+function closeChargeModal() {
+  document.getElementById('chargeModal').classList.remove('show');
+  document.body.style.overflow = '';
 }
 
 function addCharge() {
@@ -398,10 +416,12 @@ function addCharge() {
 
   charges.unshift({ date, station, car, kwh, cost });
   save();
-  clearChargeForm();
+  closeChargeModal();
   render();
-  switchPage('summary');
-  alert('Charge added!');
+
+  document.getElementById('fStation').value = '';
+  document.getElementById('fKwh').value = '';
+  document.getElementById('fCost').value = '';
 }
 
 updateVehicleSelect();
