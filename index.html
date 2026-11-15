@@ -3,640 +3,263 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>EV Charge Log</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<title>EV Charge Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
-  body { background: #f4f6f9; color: #1e293b; -webkit-tap-highlight-color: transparent; padding-bottom: 72px; }
-  @media (min-width: 768px) { body { padding-bottom: 0; } }
-
-  .container { max-width: 1100px; margin: 0 auto; padding: 16px; }
-  @media (min-width: 768px) { .container { padding: 24px; } }
-
-  header { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
-  @media (min-width: 640px) {
-    header { flex-direction: row; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+  :root {
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --border: #e2e8f0;
+    --green: #10b981;
+    --radius: 16px;
   }
-  header h1 { font-size: 22px; font-weight: 700; line-height: 1.3; }
-  @media (min-width: 640px) { header h1 { font-size: 24px; } }
-  header h1 span { color: #0d9488; }
-
-  .header-right { display: flex; align-items: center; gap: 8px; }
-  .icon-btn { background: transparent; border: none; padding: 8px; border-radius: 8px; cursor: pointer; color: #475569; }
-  .icon-btn:hover { background: #e2e8f0; }
-  .icon-btn svg { width: 22px; height: 22px; }
-
-  .btn { background: #0d9488; color: #fff; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-size: 15px; font-weight: 500; }
-  @media (max-width: 639px) { .btn.full { width: 100%; } }
-  .btn:hover { background: #0f766e; }
-  .btn-outline { background: transparent; border: 1px solid #cbd5e1; color: #475569; }
-  .btn-sm { padding: 8px 14px; font-size: 13px; }
-
-  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-  @media (min-width: 640px) { .stats { grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; } }
-  .stat-card { background: #fff; padding: 18px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-  .stat-card .label { font-size: 13px; color: #64748b; margin-bottom: 6px; }
-  .stat-card .value { font-size: 24px; font-weight: 700; }
-  @media (min-width: 640px) { .stat-card .value { font-size: 28px; } }
-  .stat-card .value span { font-size: 14px; font-weight: 500; color: #64748b; }
-
-  .charts { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 20px; }
-  @media (min-width: 768px) { .charts { grid-template-columns: 1fr 1fr; } }
-  .chart-card { background: #fff; padding: 16px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-  .chart-card h3 { font-size: 14px; font-weight: 600; color: #475569; margin-bottom: 12px; }
-  .chart-wrap { position: relative; height: 220px; }
-  @media (min-width: 768px) { .chart-wrap { height: 260px; } }
-
-  .table-wrap { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  table { width: 100%; border-collapse: collapse; min-width: 600px; }
-  th { text-align: left; padding: 12px 14px; background: #f8fafc; font-size: 12px; color: #64748b; font-weight: 600; white-space: nowrap; }
-  td { padding: 12px 14px; border-top: 1px solid #f1f5f9; font-size: 14px; }
-  tr:hover td { background: #f8fafc; }
-
-  .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; }
-  .badge-done { background: #d1fae5; color: #065f46; }
-
-  .page { display: none; }
-  .page.active { display: block; }
-
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+  .screen { display: none; padding: 16px; }
+  .screen.active { display: block; }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0 16px;
+  }
+  h1 { font-size: 22px; font-weight: 700; }
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    border: 1px solid var(--border);
+  }
+  .big-number { font-size: 32px; font-weight: 700; color: var(--accent); }
+  .label { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  .filters { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; }
+  .chip {
+    padding: 8px 16px; border-radius: 20px; background: #f1f5f9; border: none;
+    font-size: 14px; cursor: pointer; white-space: nowrap;
+  }
+  .chip.active { background: var(--accent); color: white; }
+  .charge-card {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 0; border-bottom: 1px solid var(--border);
+  }
+  .badge {
+    font-size: 12px; padding: 4px 10px; border-radius: 12px;
+    background: var(--accent-soft); color: var(--accent); font-weight: 600;
+  }
+  .badge.home { background: #d1fae5; color: #065f46; }
+  .badge.public { background: #dbeafe; color: #1e40af; }
+  input, select, textarea {
+    width: 100%; padding: 14px; border: 1px solid var(--border);
+    border-radius: 12px; font-size: 16px; margin-top: 4px; margin-bottom: 12px;
+    background: white;
+  }
+  .toggle {
+    display: flex; background: #f1f5f9; border-radius: 12px; padding: 4px; margin-bottom: 16px;
+  }
+  .toggle button {
+    flex: 1; padding: 10px; border: none; background: transparent; border-radius: 10px;
+    font-weight: 600; cursor: pointer;
+  }
+  .toggle button.active { background: var(--accent); color: white; }
+  .btn {
+    width: 100%; padding: 16px; background: var(--accent); color: white;
+    border: none; border-radius: 14px; font-size: 16px; font-weight: 600;
+    cursor: pointer; margin-top: 8px;
+  }
+  .btn.outline { background: white; color: var(--text); border: 1px solid var(--border); }
   .bottom-nav {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    background: #fff; border-top: 1px solid #e2e8f0;
-    display: flex; z-index: 50;
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-  @media (min-width: 768px) {
-    .bottom-nav { display: none; }
+    position: fixed; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto;
+    background: white; border-top: 1px solid var(--border);
+    display: flex; padding: 8px 0 env(safe-area-inset-bottom);
   }
   .bottom-nav button {
-    flex: 1; padding: 10px 8px 8px; border: none; background: transparent;
-    font-size: 11px; color: #64748b; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    flex: 1; background: none; border: none; padding: 8px; font-size: 11px;
+    color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 4px;
     cursor: pointer;
   }
-  .bottom-nav button.active { color: #0d9488; font-weight: 600; }
-  .bottom-nav svg { width: 22px; height: 22px; }
-
-  .desktop-nav { display: none; gap: 8px; }
-  @media (min-width: 768px) {
-    .desktop-nav { display: flex; }
-  }
-
-  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); align-items: flex-end; justify-content: center; z-index: 100; }
-  @media (min-width: 640px) { .modal { align-items: center; padding: 16px; } }
-  .modal.show { display: flex; }
-  .modal-box { background: #fff; width: 100%; max-width: 480px; border-radius: 16px 16px 0 0; padding: 20px; max-height: 90vh; overflow-y: auto; }
-  @media (min-width: 640px) { .modal-box { border-radius: 12px; padding: 24px; } }
-  .modal-box h2 { font-size: 18px; margin-bottom: 16px; }
-  .form-group { margin-bottom: 14px; }
-  .form-group label { display: block; font-size: 13px; margin-bottom: 6px; color: #475569; font-weight: 500; }
-  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 16px; }
-  .form-group textarea { min-height: 80px; resize: vertical; }
-  .form-actions { display: flex; gap: 10px; margin-top: 20px; }
-  .form-actions .btn { flex: 1; }
-
-  .settings-list { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-  .settings-item { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
-  .settings-item:last-child { border-bottom: none; }
-  .settings-item:hover { background: #f8fafc; }
-  .settings-item .label { font-weight: 500; }
-  .settings-item .chevron { color: #94a3b8; }
-
-  .vehicle-card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-  .vehicle-card .title { font-weight: 600; font-size: 16px; margin-bottom: 4px; }
-  .vehicle-card .meta { font-size: 13px; color: #64748b; }
-  .vehicle-card .actions { margin-top: 10px; display: flex; gap: 8px; }
-  .empty { text-align: center; padding: 40px 16px; color: #94a3b8; }
-
-  .subpage-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-  .back-btn { background: transparent; border: none; padding: 8px; cursor: pointer; color: #0d9488; }
-
-  .charge-cards { display: none; }
-  @media (max-width: 767px) {
-    .table-wrap { display: none; }
-    .charge-cards { display: grid; grid-template-columns: 1fr; gap: 12px; }
-  }
-  .charge-card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-  .charge-card .row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px; }
-  .charge-card .row .label { color: #64748b; }
-  .charge-card .title { font-weight: 600; font-size: 15px; margin-bottom: 8px; }
+  .bottom-nav button.active { color: var(--accent); font-weight: 600; }
+  .group-header { font-weight: 700; margin: 16px 0 8px; color: var(--accent); }
+  textarea { min-height: 120px; font-family: monospace; font-size: 13px; }
+  .preview-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
 </style>
 </head>
 <body>
-<div class="container">
-  <header>
-    <h1>EV <span>Charge Log</span></h1>
-    <div class="header-right">
-      <div class="desktop-nav">
-        <button class="btn btn-sm btn-outline" onclick="switchPage('summary')">Summary</button>
-        <button class="btn btn-sm btn-outline" onclick="switchPage('charge')">Charge</button>
-      </div>
-      <button class="icon-btn" onclick="switchPage('settings')" title="Settings">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      </button>
-    </div>
-  </header>
 
-  <div id="page-summary" class="page active">
-    <div class="stats">
-      <div class="stat-card"><div class="label">Sessions</div><div class="value" id="totalCount">0</div></div>
-      <div class="stat-card"><div class="label">Total Energy</div><div class="value" id="totalKwh">0 <span>kWh</span></div></div>
-      <div class="stat-card"><div class="label">Total Cost</div><div class="value" id="totalCost">0 <span>THB</span></div></div>
-      <div class="stat-card"><div class="label">Avg ฿/kWh</div><div class="value" id="avgCostPerKwh">0 <span>THB</span></div></div>
-      <div class="stat-card"><div class="label">Avg kWh/Session</div><div class="value" id="avgKwh">0 <span>kWh</span></div></div>
-      <div class="stat-card"><div class="label">This Month</div><div class="value" id="monthCost">0 <span>THB</span></div></div>
-      <div class="stat-card"><div class="label">Most Used Vehicle</div><div class="value" id="topVehicle" style="font-size:18px;">-</div></div>
-    </div>
-
-    <div class="charts">
-      <div class="chart-card">
-        <h3>Cost Over Time</h3>
-        <div class="chart-wrap"><canvas id="costChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <h3>Energy by Vehicle</h3>
-        <div class="chart-wrap"><canvas id="energyChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <h3>Cost by Vehicle</h3>
-        <div class="chart-wrap"><canvas id="costByVehicleChart"></canvas></div>
-      </div>
+<!-- Overview -->
+<div id="overview" class="screen active">
+  <header><h1>Overview</h1></header>
+  <div class="card">
+    <div class="label">This Month</div>
+    <div style="display:flex; justify-content:space-between; margin-top:8px;">
+      <div><div class="big-number">128.6</div><div class="label">kWh</div></div>
+      <div><div class="big-number">1,542</div><div class="label">Baht</div></div>
+      <div><div class="big-number">12.01</div><div class="label">฿/kWh</div></div>
     </div>
   </div>
-
-  <div id="page-charge" class="page">
-    <div style="margin-bottom:16px;">
-      <button class="btn" onclick="openChargeModal()">+ Add Charge</button>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Date</th><th>Station</th><th>Vehicle</th><th>kWh</th><th>Cost</th><th>Status</th></tr></thead>
-        <tbody id="chargeList"></tbody>
-      </table>
-      <div class="empty" id="emptyMsg" style="display:none;">No charge records yet</div>
-    </div>
-    <div class="charge-cards" id="chargeCards"></div>
-  </div>
-
-  <div id="page-settings" class="page">
-    <div class="settings-list">
-      <div class="settings-item" onclick="switchPage('vehicles')">
-        <span class="label">Vehicles</span>
-        <span class="chevron">›</span>
-      </div>
-      <div class="settings-item">
-        <span class="label">About</span>
-        <span class="chevron">›</span>
-      </div>
+  <div class="card">
+    <div class="label">This Year</div>
+    <div style="display:flex; justify-content:space-between; margin-top:8px;">
+      <div><div class="big-number" style="font-size:24px;">1,286</div><div class="label">kWh</div></div>
+      <div><div class="big-number" style="font-size:24px;">15,674</div><div class="label">Baht</div></div>
+      <div><div class="big-number" style="font-size:24px;">12.19</div><div class="label">฿/kWh</div></div>
     </div>
   </div>
+  <div class="card">
+    <div class="label">All-Time</div>
+    <div style="display:flex; justify-content:space-between; margin-top:8px;">
+      <div><div class="big-number" style="font-size:24px;">4,753</div><div class="label">kWh</div></div>
+      <div><div class="big-number" style="font-size:24px;">58,214</div><div class="label">Baht</div></div>
+      <div><div class="big-number" style="font-size:24px;">12.25</div><div class="label">฿/kWh</div></div>
+    </div>
+  </div>
+</div>
 
-  <div id="page-vehicles" class="page">
-    <div class="subpage-header">
-      <button class="back-btn" onclick="switchPage('settings')">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-      </button>
-      <h2 style="font-size:18px;">Vehicles</h2>
+<!-- History -->
+<div id="history" class="screen">
+  <header><h1>History</h1></header>
+  <div class="filters">
+    <button class="chip active">All</button>
+    <button class="chip">Home</button>
+    <button class="chip">Public</button>
+  </div>
+  <div class="card">
+    <div class="charge-card">
+      <div>
+        <div style="font-weight:600;">24 May 2025</div>
+        <div class="label">28.7 kWh · ฿142.50</div>
+      </div>
+      <span class="badge home">Home</span>
     </div>
-    <div style="margin-bottom:16px;">
-      <button class="btn" onclick="openVehicleModal()">+ Add Vehicle</button>
+    <div class="charge-card">
+      <div>
+        <div style="font-weight:600;">23 May 2025</div>
+        <div class="label">34.2 kWh · ฿198.00</div>
+      </div>
+      <span class="badge public">Public</span>
     </div>
-    <div id="vehicleList"></div>
+    <div class="charge-card">
+      <div>
+        <div style="font-weight:600;">21 May 2025</div>
+        <div class="label">22.1 kWh · ฿199.00</div>
+      </div>
+      <span class="badge home">Home</span>
+    </div>
+    <div class="charge-card">
+      <div>
+        <div style="font-weight:600;">18 May 2025</div>
+        <div class="label">41.6 kWh · ฿245.50</div>
+      </div>
+      <span class="badge public">Public</span>
+    </div>
+  </div>
+</div>
+
+<!-- Add Charge -->
+<div id="add" class="screen">
+  <header><h1>Add Charge</h1></header>
+  <div class="card">
+    <div class="label">Date & Time</div>
+    <input type="text" value="Today, 16:30" readonly>
+    <div class="label">Home / Public</div>
+    <div class="toggle">
+      <button>Home</button>
+      <button class="active">Public</button>
+    </div>
+    <div class="label">Energy added (kWh)</div>
+    <input type="number" value="25.40" step="0.1">
+    <div class="label">Cost (Baht)</div>
+    <input type="number" value="482.00">
+    <div class="label">Start %</div>
+    <input type="range" min="0" max="100" value="32" style="padding:0;">
+    <div class="label">End %</div>
+    <input type="range" min="0" max="100" value="78" style="padding:0;">
+    <button class="btn">Save Charge</button>
+  </div>
+</div>
+
+<!-- Trend -->
+<div id="trend" class="screen">
+  <header><h1>Spending Trend</h1></header>
+  <div class="card">
+    <div class="label">Total spent (last 6 months)</div>
+    <div class="big-number">฿ 4,562.40</div>
+  </div>
+  <div class="card">
+    <canvas id="trendChart" height="180"></canvas>
+  </div>
+</div>
+
+<!-- Import -->
+<div id="import" class="screen">
+  <header><h1>Import Stations</h1></header>
+  <div class="card">
+    <div class="label">Paste CSV or JSON</div>
+    <textarea placeholder="provider,branch,address,connectors">provider,branch,address,connectors
+GreenWay,Warsaw Airport,Warsaw,CCS Type 2
+IONITY,Berlin West,Berlin,CCS Type 2</textarea>
+    <button class="btn" style="margin-bottom:16px;">Parse</button>
+    <div class="label">Stations found</div>
+    <div class="group-header">GreenWay</div>
+    <div class="preview-row"><span>Warsaw Airport</span><span class="badge">CCS</span></div>
+    <div class="group-header">IONITY</div>
+    <div class="preview-row"><span>Berlin West</span><span class="badge">CCS</span></div>
+    <div style="display:flex; gap:8px; margin-top:16px;">
+      <button class="btn outline">Cancel</button>
+      <button class="btn">Import All</button>
+    </div>
   </div>
 </div>
 
 <nav class="bottom-nav">
-  <button id="nav-summary" class="active" onclick="switchPage('summary')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    Summary
-  </button>
-  <button id="nav-charge" onclick="switchPage('charge')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-    Charge
-  </button>
-  <button id="nav-settings" onclick="switchPage('settings')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-    Settings
-  </button>
+  <button class="active" onclick="show('overview')">Overview</button>
+  <button onclick="show('history')">History</button>
+  <button onclick="show('add')">Add</button>
+  <button onclick="show('trend')">Trend</button>
+  <button onclick="show('import')">Import</button>
 </nav>
 
-<div class="modal" id="chargeModal">
-  <div class="modal-box">
-    <h2>Add Charge</h2>
-    <div class="form-group">
-      <label>Date</label>
-      <input type="date" id="fDate">
-    </div>
-    <div class="form-group">
-      <label>Station</label>
-      <input type="text" id="fStation" placeholder="e.g. EA Siam">
-    </div>
-    <div class="form-group">
-      <label>Vehicle</label>
-      <select id="fCar"></select>
-    </div>
-    <div class="form-group">
-      <label>Energy (kWh)</label>
-      <input type="number" id="fKwh" step="0.1" placeholder="0.0" inputmode="decimal">
-    </div>
-    <div class="form-group">
-      <label>Cost (THB)</label>
-      <input type="number" id="fCost" placeholder="0" inputmode="numeric">
-    </div>
-    <div class="form-actions">
-      <button class="btn btn-outline" onclick="closeChargeModal()">Cancel</button>
-      <button class="btn" onclick="addCharge()">Save</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal" id="vehicleModal">
-  <div class="modal-box">
-    <h2 id="vehicleModalTitle">Add Vehicle</h2>
-    <input type="hidden" id="vIndex">
-    <div class="form-group">
-      <label>Name *</label>
-      <input type="text" id="vName" placeholder="e.g. Daily Driver" required>
-    </div>
-    <div class="form-group">
-      <label>Model *</label>
-      <input type="text" id="vModel" placeholder="e.g. Tesla Model Y" required>
-    </div>
-    <div class="form-group">
-      <label>License Plate</label>
-      <input type="text" id="vPlate" placeholder="e.g. 1กข 1234">
-    </div>
-    <div class="form-group">
-      <label>Battery Capacity (kWh)</label>
-      <input type="number" id="vBattery" step="0.1" placeholder="e.g. 75">
-    </div>
-    <div class="form-group">
-      <label>Year</label>
-      <input type="number" id="vYear" placeholder="e.g. 2024" min="2010" max="2030">
-    </div>
-    <div class="form-group">
-      <label>Notes</label>
-      <textarea id="vNotes" placeholder="Optional notes"></textarea>
-    </div>
-    <div class="form-actions">
-      <button class="btn btn-outline" onclick="closeVehicleModal()">Cancel</button>
-      <button class="btn" onclick="saveVehicle()">Save</button>
-    </div>
-  </div>
-</div>
-
 <script>
-const defaultVehicles = [
-  { name: "Tesla Model Y", model: "Tesla Model Y", plate: "", battery: 75, year: 2023, notes: "" },
-  { name: "BYD Atto 3", model: "BYD Atto 3", plate: "", battery: 60, year: 2024, notes: "" },
-  { name: "ORA Good Cat", model: "ORA Good Cat", plate: "", battery: 63, year: 2023, notes: "" },
-  { name: "MG4 Electric", model: "MG4 Electric", plate: "", battery: 64, year: 2024, notes: "" }
-];
-
-let vehicles = JSON.parse(localStorage.getItem('ev_vehicles') || 'null') || defaultVehicles;
-if (vehicles.length && typeof vehicles[0] === 'string') {
-  vehicles = vehicles.map(name => ({ name, model: name, plate: "", battery: null, year: null, notes: "" }));
-  save();
-}
-
-let charges = JSON.parse(localStorage.getItem('ev_charges') || '[{"date":"2026-11-14","station":"EA Siam","car":"Tesla Model Y","kwh":42.5,"cost":320},{"date":"2026-11-12","station":"Sharge+ Central World","car":"BYD Atto 3","kwh":38.2,"cost":285},{"date":"2026-11-10","station":"PTT Bang Chak","car":"ORA Good Cat","kwh":29.8,"cost":210}]');
-
-let costChart, energyChart, costByVehicleChart;
-
-function save() {
-  localStorage.setItem('ev_vehicles', JSON.stringify(vehicles));
-  localStorage.setItem('ev_charges', JSON.stringify(charges));
-}
-
-function switchPage(page, updateHash = true) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const pageEl = document.getElementById('page-' + page);
-  if (pageEl) pageEl.classList.add('active');
-
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
   document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
-  const navBtn = document.getElementById('nav-' + page);
-  if (navBtn) navBtn.classList.add('active');
-
-  if (updateHash && location.hash !== '#' + page) {
-    location.hash = page;
-  }
-
-  if (page === 'vehicles') renderVehicleList();
-  if (page === 'charge' || page === 'summary') render();
+  event.target.classList.add('active');
 }
 
-function handleHash() {
-  const page = (location.hash.slice(1) || 'summary');
-  const valid = ['summary', 'charge', 'settings', 'vehicles'];
-  switchPage(valid.includes(page) ? page : 'summary', false);
-}
-
-window.addEventListener('hashchange', handleHash);
-window.addEventListener('DOMContentLoaded', handleHash);
-
-function updateVehicleSelect() {
-  const sel = document.getElementById('fCar');
-  sel.innerHTML = vehicles.map(v => `<option value="${v.name}">${v.name}</option>`).join('');
-}
-
-function renderVehicleList() {
-  const list = document.getElementById('vehicleList');
-  if (!vehicles.length) {
-    list.innerHTML = '<div class="empty">No vehicles yet</div>';
-    return;
-  }
-  list.innerHTML = vehicles.map((v, i) => `
-    <div class="vehicle-card">
-      <div class="title">${v.name}</div>
-      <div class="meta">
-        ${v.model}${v.plate ? ' · ' + v.plate : ''}${v.year ? ' · ' + v.year : ''}${v.battery ? ' · ' + v.battery + ' kWh' : ''}
-      </div>
-      ${v.notes ? `<div class="meta" style="margin-top:4px;">${v.notes}</div>` : ''}
-      <div class="actions">
-        <button class="btn btn-sm btn-outline" onclick="editVehicle(${i})">Edit</button>
-        <button class="btn btn-sm btn-outline" onclick="removeVehicle(${i})">Delete</button>
-      </div>
-    </div>
-  `).join('');
-}
-
-function openVehicleModal(index = null) {
-  document.getElementById('vehicleModalTitle').textContent = index === null ? 'Add Vehicle' : 'Edit Vehicle';
-  document.getElementById('vIndex').value = index === null ? '' : index;
-
-  if (index !== null) {
-    const v = vehicles[index];
-    document.getElementById('vName').value = v.name || '';
-    document.getElementById('vModel').value = v.model || '';
-    document.getElementById('vPlate').value = v.plate || '';
-    document.getElementById('vBattery').value = v.battery || '';
-    document.getElementById('vYear').value = v.year || '';
-    document.getElementById('vNotes').value = v.notes || '';
-  } else {
-    document.getElementById('vName').value = '';
-    document.getElementById('vModel').value = '';
-    document.getElementById('vPlate').value = '';
-    document.getElementById('vBattery').value = '';
-    document.getElementById('vYear').value = '';
-    document.getElementById('vNotes').value = '';
-  }
-
-  document.getElementById('vehicleModal').classList.add('show');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeVehicleModal() {
-  document.getElementById('vehicleModal').classList.remove('show');
-  document.body.style.overflow = '';
-}
-
-function saveVehicle() {
-  const name = document.getElementById('vName').value.trim();
-  const model = document.getElementById('vModel').value.trim();
-  if (!name || !model) {
-    alert('Name and Model are required');
-    return;
-  }
-
-  const vehicle = {
-    name,
-    model,
-    plate: document.getElementById('vPlate').value.trim(),
-    battery: parseFloat(document.getElementById('vBattery').value) || null,
-    year: parseInt(document.getElementById('vYear').value) || null,
-    notes: document.getElementById('vNotes').value.trim()
-  };
-
-  const index = document.getElementById('vIndex').value;
-  if (index === '') {
-    if (vehicles.some(v => v.name === name)) {
-      alert('A vehicle with this name already exists');
-      return;
-    }
-    vehicles.push(vehicle);
-  } else {
-    vehicles[parseInt(index)] = vehicle;
-  }
-
-  save();
-  closeVehicleModal();
-  updateVehicleSelect();
-  renderVehicleList();
-}
-
-function editVehicle(index) {
-  openVehicleModal(index);
-}
-
-function removeVehicle(index) {
-  if (!confirm('Delete this vehicle?')) return;
-  vehicles.splice(index, 1);
-  save();
-  updateVehicleSelect();
-  renderVehicleList();
-}
-
-function renderChargeTable(tbodyId, emptyId) {
-  const tbody = document.getElementById(tbodyId);
-  const empty = document.getElementById(emptyId);
-  const cards = document.getElementById('chargeCards');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-  if (cards) cards.innerHTML = '';
-
-  if (charges.length === 0) {
-    empty.style.display = 'block';
-    return;
-  }
-  empty.style.display = 'none';
-
-  charges.forEach(c => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${c.date}</td>
-      <td>${c.station}</td>
-      <td>${c.car}</td>
-      <td>${c.kwh.toFixed(1)}</td>
-      <td>${c.cost.toLocaleString()}</td>
-      <td><span class="badge badge-done">Completed</span></td>
-    `;
-    tbody.appendChild(tr);
-
-    if (cards) {
-      const card = document.createElement('div');
-      card.className = 'charge-card';
-      card.innerHTML = `
-        <div class="title">${c.station}</div>
-        <div class="row"><span class="label">Date</span><span>${c.date}</span></div>
-        <div class="row"><span class="label">Vehicle</span><span>${c.car}</span></div>
-        <div class="row"><span class="label">Energy</span><span>${c.kwh.toFixed(1)} kWh</span></div>
-        <div class="row"><span class="label">Cost</span><span>${c.cost.toLocaleString()} THB</span></div>
-        <div class="row"><span class="label">Status</span><span class="badge badge-done">Completed</span></div>
-      `;
-      cards.appendChild(card);
-    }
-  });
-}
-
-function render() {
-  renderChargeTable('chargeList', 'emptyMsg');
-  updateStats();
-  updateCharts();
-}
-
-function updateStats() {
-  const total = charges.length;
-  const kwh = charges.reduce((s, c) => s + c.kwh, 0);
-  const cost = charges.reduce((s, c) => s + c.cost, 0);
-
-  document.getElementById('totalCount').textContent = total;
-  document.getElementById('totalKwh').innerHTML = `${kwh.toFixed(1)} <span>kWh</span>`;
-  document.getElementById('totalCost').innerHTML = `${cost.toLocaleString()} <span>THB</span>`;
-
-  const avgCostPerKwh = kwh > 0 ? (cost / kwh) : 0;
-  document.getElementById('avgCostPerKwh').innerHTML = `${avgCostPerKwh.toFixed(1)} <span>THB</span>`;
-
-  const avgKwh = total > 0 ? (kwh / total) : 0;
-  document.getElementById('avgKwh').innerHTML = `${avgKwh.toFixed(1)} <span>kWh</span>`;
-
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const monthPrefix = `${year}-${month}`;
-  const monthCharges = charges.filter(c => c.date.startsWith(monthPrefix));
-  const monthCost = monthCharges.reduce((s, c) => s + c.cost, 0);
-  document.getElementById('monthCost').innerHTML = `${monthCost.toLocaleString()} <span>THB</span>`;
-
-  const vehicleCounts = {};
-  charges.forEach(c => {
-    vehicleCounts[c.car] = (vehicleCounts[c.car] || 0) + 1;
-  });
-  let topVehicle = '-';
-  let maxCount = 0;
-  for (const [v, count] of Object.entries(vehicleCounts)) {
-    if (count > maxCount) {
-      maxCount = count;
-      topVehicle = v;
-    }
-  }
-  document.getElementById('topVehicle').textContent = topVehicle;
-}
-
-function updateCharts() {
-  const byDate = {};
-  charges.forEach(c => {
-    byDate[c.date] = (byDate[c.date] || 0) + c.cost;
-  });
-  const dates = Object.keys(byDate).sort();
-  const costData = dates.map(d => byDate[d]);
-
-  if (costChart) costChart.destroy();
-  costChart = new Chart(document.getElementById('costChart'), {
+// Simple chart
+const ctx = document.getElementById('trendChart');
+if (ctx) {
+  new Chart(ctx, {
     type: 'line',
     data: {
-      labels: dates,
+      labels: ['Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May'],
       datasets: [{
-        label: 'Cost (THB)',
-        data: costData,
-        borderColor: '#0d9488',
-        backgroundColor: 'rgba(13,148,136,0.1)',
+        label: 'Baht',
+        data: [420, 650, 530, 790, 980, 1122],
+        borderColor: '#2563eb',
         tension: 0.3,
-        fill: true
+        fill: false
       }]
     },
     options: {
       responsive: true,
-      maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: { y: { beginAtZero: true } }
     }
   });
-
-  const energyByVehicle = {};
-  charges.forEach(c => {
-    energyByVehicle[c.car] = (energyByVehicle[c.car] || 0) + c.kwh;
-  });
-  const vehicleNames = Object.keys(energyByVehicle);
-  const energyData = vehicleNames.map(v => energyByVehicle[v]);
-
-  if (energyChart) energyChart.destroy();
-  energyChart = new Chart(document.getElementById('energyChart'), {
-    type: 'bar',
-    data: {
-      labels: vehicleNames,
-      datasets: [{
-        label: 'kWh',
-        data: energyData,
-        backgroundColor: '#0d9488'
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true } }
-    }
-  });
-
-  const costByVehicle = {};
-  charges.forEach(c => {
-    costByVehicle[c.car] = (costByVehicle[c.car] || 0) + c.cost;
-  });
-  const costVehicleNames = Object.keys(costByVehicle);
-  const costVehicleData = costVehicleNames.map(v => costByVehicle[v]);
-
-  if (costByVehicleChart) costByVehicleChart.destroy();
-  costByVehicleChart = new Chart(document.getElementById('costByVehicleChart'), {
-    type: 'doughnut',
-    data: {
-      labels: costVehicleNames,
-      datasets: [{
-        data: costVehicleData,
-        backgroundColor: ['#0d9488', '#14b8a6', '#2dd4bf', '#5eead4', '#99f6e4', '#ccfbf1']
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } }
-    }
-  });
 }
-
-function openChargeModal() {
-  updateVehicleSelect();
-  document.getElementById('chargeModal').classList.add('show');
-  document.getElementById('fDate').valueAsDate = new Date();
-  document.body.style.overflow = 'hidden';
-}
-function closeChargeModal() {
-  document.getElementById('chargeModal').classList.remove('show');
-  document.body.style.overflow = '';
-}
-
-function addCharge() {
-  const date = document.getElementById('fDate').value;
-  const station = document.getElementById('fStation').value.trim();
-  const car = document.getElementById('fCar').value;
-  const kwh = parseFloat(document.getElementById('fKwh').value);
-  const cost = parseFloat(document.getElementById('fCost').value);
-
-  if (!date || !station || !car || isNaN(kwh) || isNaN(cost)) {
-    alert('Please fill in all fields');
-    return;
-  }
-
-  charges.unshift({ date, station, car, kwh, cost });
-  save();
-  closeChargeModal();
-  render();
-
-  document.getElementById('fStation').value = '';
-  document.getElementById('fKwh').value = '';
-  document.getElementById('fCost').value = '';
-}
-
-updateVehicleSelect();
-handleHash();
 </script>
 </body>
 </html>
