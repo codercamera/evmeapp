@@ -7,7 +7,6 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
   body { background: #f4f6f9; color: #1e293b; -webkit-tap-highlight-color: transparent; padding-bottom: 72px; }
-  body.locked { overflow: hidden; }
   @media (min-width: 768px) { body { padding-bottom: 0; } }
 
   .container { max-width: 1100px; margin: 0 auto; padding: 16px; }
@@ -20,6 +19,11 @@
   header h1 { font-size: 22px; font-weight: 700; line-height: 1.3; }
   @media (min-width: 640px) { header h1 { font-size: 24px; } }
   header h1 span { color: #0d9488; }
+
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  .icon-btn { background: transparent; border: none; padding: 8px; border-radius: 8px; cursor: pointer; color: #475569; }
+  .icon-btn:hover { background: #e2e8f0; }
+  .icon-btn svg { width: 22px; height: 22px; }
 
   .btn { background: #0d9488; color: #fff; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-size: 15px; font-weight: 500; }
   @media (max-width: 639px) { .btn.full { width: 100%; } }
@@ -71,7 +75,7 @@
   .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); align-items: flex-end; justify-content: center; z-index: 100; }
   @media (min-width: 640px) { .modal { align-items: center; padding: 16px; } }
   .modal.show { display: flex; }
-  .modal-box { background: #fff; width: 100%; max-width: 480px; border-radius: 16px 16px 0 0; padding: 20px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); max-height: 90vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .modal-box { background: #fff; width: 100%; max-width: 480px; border-radius: 16px 16px 0 0; padding: 20px; max-height: 90vh; overflow-y: auto; }
   @media (min-width: 640px) { .modal-box { border-radius: 12px; padding: 24px; } }
   .modal-box h2 { font-size: 18px; margin-bottom: 16px; }
   .form-group { margin-bottom: 14px; }
@@ -81,21 +85,35 @@
   .form-actions { display: flex; gap: 10px; margin-top: 20px; }
   .form-actions .btn { flex: 1; }
 
+  .settings-list { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .settings-item { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 1px solid #f1f5f9; cursor: pointer; }
+  .settings-item:last-child { border-bottom: none; }
+  .settings-item:hover { background: #f8fafc; }
+  .settings-item .label { font-weight: 500; }
+  .settings-item .chevron { color: #94a3b8; }
+
   .vehicle-card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
   .vehicle-card .title { font-weight: 600; font-size: 16px; margin-bottom: 4px; }
   .vehicle-card .meta { font-size: 13px; color: #64748b; }
   .vehicle-card .actions { margin-top: 10px; display: flex; gap: 8px; }
   .empty { text-align: center; padding: 40px 16px; color: #94a3b8; }
+
+  .subpage-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .back-btn { background: transparent; border: none; padding: 8px; cursor: pointer; color: #0d9488; }
 </style>
 </head>
 <body>
 <div class="container">
   <header>
     <h1>EV <span>Charge Log</span></h1>
-    <div class="desktop-nav">
-      <button class="btn btn-sm btn-outline" onclick="switchPage('summary')">Summary</button>
-      <button class="btn btn-sm btn-outline" onclick="switchPage('charge')">Charge</button>
-      <button class="btn btn-sm btn-outline" onclick="switchPage('vehicles')">Vehicles</button>
+    <div class="header-right">
+      <div class="desktop-nav">
+        <button class="btn btn-sm btn-outline" onclick="switchPage('summary')">Summary</button>
+        <button class="btn btn-sm btn-outline" onclick="switchPage('charge')">Charge</button>
+      </div>
+      <button class="icon-btn" onclick="switchPage('settings')" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
     </div>
   </header>
 
@@ -117,7 +135,7 @@
 
   <div id="page-charge" class="page">
     <div style="margin-bottom:16px;">
-      <button class="btn full" onclick="openChargeModal()">+ Add Charge</button>
+      <button class="btn" onclick="openChargeModal()">+ Add Charge</button>
     </div>
     <div class="table-wrap">
       <table>
@@ -128,7 +146,26 @@
     </div>
   </div>
 
+  <div id="page-settings" class="page">
+    <div class="settings-list">
+      <div class="settings-item" onclick="switchPage('vehicles')">
+        <span class="label">Vehicles</span>
+        <span class="chevron">›</span>
+      </div>
+      <div class="settings-item">
+        <span class="label">About</span>
+        <span class="chevron">›</span>
+      </div>
+    </div>
+  </div>
+
   <div id="page-vehicles" class="page">
+    <div class="subpage-header">
+      <button class="back-btn" onclick="switchPage('settings')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <h2 style="font-size:18px;">Vehicles</h2>
+    </div>
     <div style="margin-bottom:16px;">
       <button class="btn" onclick="openVehicleModal()">+ Add Vehicle</button>
     </div>
@@ -145,14 +182,14 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
     Charge
   </button>
-  <button id="nav-vehicles" onclick="switchPage('vehicles')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-    Vehicles
+  <button id="nav-settings" onclick="switchPage('settings')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Settings
   </button>
 </nav>
 
 <div class="modal" id="chargeModal">
-  <div class="modal-box" onclick="event.stopPropagation()">
+  <div class="modal-box">
     <h2>Add Charge</h2>
     <div class="form-group">
       <label>Date</label>
@@ -394,17 +431,12 @@ function updateStats() {
 
 function openChargeModal() {
   updateVehicleSelect();
-  document.getElementById('fStation').value = '';
-  document.getElementById('fKwh').value = '';
-  document.getElementById('fCost').value = '';
-  document.getElementById('fDate').valueAsDate = new Date();
   document.getElementById('chargeModal').classList.add('show');
-  document.body.classList.add('locked');
+  document.getElementById('fDate').valueAsDate = new Date();
   document.body.style.overflow = 'hidden';
 }
 function closeChargeModal() {
   document.getElementById('chargeModal').classList.remove('show');
-  document.body.classList.remove('locked');
   document.body.style.overflow = '';
 }
 
@@ -429,17 +461,6 @@ function addCharge() {
   document.getElementById('fKwh').value = '';
   document.getElementById('fCost').value = '';
 }
-
-document.getElementById('chargeModal').addEventListener('click', function(e) {
-  if (e.target === this) closeChargeModal();
-});
-
-document.addEventListener('keydown', function(e) {
-  if (e.key !== 'Escape') return;
-  if (document.getElementById('chargeModal').classList.contains('show')) {
-    closeChargeModal();
-  }
-});
 
 updateVehicleSelect();
 render();
