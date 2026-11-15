@@ -123,14 +123,6 @@
       <div class="stat-card"><div class="label">Total Energy</div><div class="value" id="totalKwh">0 <span>kWh</span></div></div>
       <div class="stat-card"><div class="label">Total Cost</div><div class="value" id="totalCost">0 <span>THB</span></div></div>
     </div>
-
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Date</th><th>Station</th><th>Vehicle</th><th>kWh</th><th>Cost</th><th>Status</th></tr></thead>
-        <tbody id="summaryChargeList"></tbody>
-      </table>
-      <div class="empty" id="summaryEmptyMsg" style="display:none;">No charge records yet</div>
-    </div>
   </div>
 
   <div id="page-charge" class="page">
@@ -415,7 +407,6 @@ function renderChargeTable(tbodyId, emptyId) {
 }
 
 function render() {
-  renderChargeTable('summaryChargeList', 'summaryEmptyMsg');
   renderChargeTable('chargeList', 'emptyMsg');
   updateStats();
 }
