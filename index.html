@@ -75,12 +75,15 @@
   .modal-box h2 { font-size: 18px; margin-bottom: 16px; }
   .form-group { margin-bottom: 14px; }
   .form-group label { display: block; font-size: 13px; margin-bottom: 6px; color: #475569; font-weight: 500; }
-  .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 16px; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 16px; }
+  .form-group textarea { min-height: 80px; resize: vertical; }
   .form-actions { display: flex; gap: 10px; margin-top: 20px; }
   .form-actions .btn { flex: 1; }
 
-  .vehicle-row { display: flex; gap: 8px; align-items: center; }
-  .vehicle-row select, .vehicle-row input { flex: 1; }
+  .vehicle-card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .vehicle-card .title { font-weight: 600; font-size: 16px; margin-bottom: 4px; }
+  .vehicle-card .meta { font-size: 13px; color: #64748b; }
+  .vehicle-card .actions { margin-top: 10px; display: flex; gap: 8px; }
   .empty { text-align: center; padding: 40px 16px; color: #94a3b8; }
 </style>
 </head>
@@ -91,7 +94,7 @@
     <div class="desktop-nav">
       <button class="btn btn-sm btn-outline" onclick="switchPage('summary')">Summary</button>
       <button class="btn btn-sm btn-outline" onclick="switchPage('vehicles')">Vehicles</button>
-      <button class="btn" onclick="openModal()">+ Add Charge</button>
+      <button class="btn" onclick="openChargeModal()">+ Add Charge</button>
     </div>
   </header>
 
@@ -111,19 +114,15 @@
     </div>
 
     <div style="margin-top:16px;">
-      <button class="btn full" onclick="openModal()">+ Add Charge</button>
+      <button class="btn full" onclick="openChargeModal()">+ Add Charge</button>
     </div>
   </div>
 
   <div id="page-vehicles" class="page">
-    <div class="form-group">
-      <label>New Vehicle</label>
-      <div class="vehicle-row">
-        <input type="text" id="newVehicle" placeholder="e.g. Tesla Model 3">
-        <button class="btn btn-sm" onclick="addVehicle()">Add</button>
-      </div>
+    <div style="margin-bottom:16px;">
+      <button class="btn" onclick="openVehicleModal()">+ Add Vehicle</button>
     </div>
-    <div id="vehicleList" style="margin-top:16px; background:#fff; border-radius:12px; padding:8px 16px; box-shadow:0 1px 3px rgba(0,0,0,.08);"></div>
+    <div id="vehicleList"></div>
   </div>
 </div>
 
@@ -138,7 +137,7 @@
   </button>
 </nav>
 
-<div class="modal" id="modal">
+<div class="modal" id="chargeModal">
   <div class="modal-box">
     <h2>Add Charge</h2>
     <div class="form-group">
@@ -162,14 +161,61 @@
       <input type="number" id="fCost" placeholder="0" inputmode="numeric">
     </div>
     <div class="form-actions">
-      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-outline" onclick="closeChargeModal()">Cancel</button>
       <button class="btn" onclick="addCharge()">Save</button>
     </div>
   </div>
 </div>
 
+<div class="modal" id="vehicleModal">
+  <div class="modal-box">
+    <h2 id="vehicleModalTitle">Add Vehicle</h2>
+    <input type="hidden" id="vIndex">
+    <div class="form-group">
+      <label>Name *</label>
+      <input type="text" id="vName" placeholder="e.g. Daily Driver" required>
+    </div>
+    <div class="form-group">
+      <label>Model *</label>
+      <input type="text" id="vModel" placeholder="e.g. Tesla Model Y" required>
+    </div>
+    <div class="form-group">
+      <label>License Plate</label>
+      <input type="text" id="vPlate" placeholder="e.g. 1กข 1234">
+    </div>
+    <div class="form-group">
+      <label>Battery Capacity (kWh)</label>
+      <input type="number" id="vBattery" step="0.1" placeholder="e.g. 75">
+    </div>
+    <div class="form-group">
+      <label>Year</label>
+      <input type="number" id="vYear" placeholder="e.g. 2024" min="2010" max="2030">
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <textarea id="vNotes" placeholder="Optional notes"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="closeVehicleModal()">Cancel</button>
+      <button class="btn" onclick="saveVehicle()">Save</button>
+    </div>
+  </div>
+</div>
+
 <script>
-let vehicles = JSON.parse(localStorage.getItem('ev_vehicles') || '["Tesla Model Y","BYD Atto 3","ORA Good Cat","MG4 Electric"]');
+const defaultVehicles = [
+  { name: "Tesla Model Y", model: "Tesla Model Y", plate: "", battery: 75, year: 2023, notes: "" },
+  { name: "BYD Atto 3", model: "BYD Atto 3", plate: "", battery: 60, year: 2024, notes: "" },
+  { name: "ORA Good Cat", model: "ORA Good Cat", plate: "", battery: 63, year: 2023, notes: "" },
+  { name: "MG4 Electric", model: "MG4 Electric", plate: "", battery: 64, year: 2024, notes: "" }
+];
+
+let vehicles = JSON.parse(localStorage.getItem('ev_vehicles') || 'null') || defaultVehicles;
+if (vehicles.length && typeof vehicles[0] === 'string') {
+  vehicles = vehicles.map(name => ({ name, model: name, plate: "", battery: null, year: null, notes: "" }));
+  save();
+}
+
 let charges = JSON.parse(localStorage.getItem('ev_charges') || '[{"date":"2026-11-14","station":"EA Siam","car":"Tesla Model Y","kwh":42.5,"cost":320},{"date":"2026-11-12","station":"Sharge+ Central World","car":"BYD Atto 3","kwh":38.2,"cost":285},{"date":"2026-11-10","station":"PTT Bang Chak","car":"ORA Good Cat","kwh":29.8,"cost":210}]');
 
 function save() {
@@ -189,28 +235,96 @@ function switchPage(page) {
 
 function updateVehicleSelect() {
   const sel = document.getElementById('fCar');
-  sel.innerHTML = vehicles.map(v => `<option>${v}</option>`).join('');
+  sel.innerHTML = vehicles.map(v => `<option value="${v.name}">${v.name}</option>`).join('');
 }
 
 function renderVehicleList() {
   const list = document.getElementById('vehicleList');
+  if (!vehicles.length) {
+    list.innerHTML = '<div class="empty">No vehicles yet</div>';
+    return;
+  }
   list.innerHTML = vehicles.map((v, i) => `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f1f5f9;">
-      <span>${v}</span>
-      <button class="btn btn-sm btn-outline" onclick="removeVehicle(${i})">Delete</button>
+    <div class="vehicle-card">
+      <div class="title">${v.name}</div>
+      <div class="meta">
+        ${v.model}${v.plate ? ' · ' + v.plate : ''}${v.year ? ' · ' + v.year : ''}${v.battery ? ' · ' + v.battery + ' kWh' : ''}
+      </div>
+      ${v.notes ? `<div class="meta" style="margin-top:4px;">${v.notes}</div>` : ''}
+      <div class="actions">
+        <button class="btn btn-sm btn-outline" onclick="editVehicle(${i})">Edit</button>
+        <button class="btn btn-sm btn-outline" onclick="removeVehicle(${i})">Delete</button>
+      </div>
     </div>
-  `).join('') || '<div style="color:#94a3b8;font-size:14px;padding:16px;text-align:center;">No vehicles yet</div>';
+  `).join('');
 }
 
-function addVehicle() {
-  const name = document.getElementById('newVehicle').value.trim();
-  if (!name) return alert('Please enter a vehicle name');
-  if (vehicles.includes(name)) return alert('This vehicle already exists');
-  vehicles.push(name);
-  document.getElementById('newVehicle').value = '';
+function openVehicleModal(index = null) {
+  document.getElementById('vehicleModalTitle').textContent = index === null ? 'Add Vehicle' : 'Edit Vehicle';
+  document.getElementById('vIndex').value = index === null ? '' : index;
+
+  if (index !== null) {
+    const v = vehicles[index];
+    document.getElementById('vName').value = v.name || '';
+    document.getElementById('vModel').value = v.model || '';
+    document.getElementById('vPlate').value = v.plate || '';
+    document.getElementById('vBattery').value = v.battery || '';
+    document.getElementById('vYear').value = v.year || '';
+    document.getElementById('vNotes').value = v.notes || '';
+  } else {
+    document.getElementById('vName').value = '';
+    document.getElementById('vModel').value = '';
+    document.getElementById('vPlate').value = '';
+    document.getElementById('vBattery').value = '';
+    document.getElementById('vYear').value = '';
+    document.getElementById('vNotes').value = '';
+  }
+
+  document.getElementById('vehicleModal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeVehicleModal() {
+  document.getElementById('vehicleModal').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function saveVehicle() {
+  const name = document.getElementById('vName').value.trim();
+  const model = document.getElementById('vModel').value.trim();
+  if (!name || !model) {
+    alert('Name and Model are required');
+    return;
+  }
+
+  const vehicle = {
+    name,
+    model,
+    plate: document.getElementById('vPlate').value.trim(),
+    battery: parseFloat(document.getElementById('vBattery').value) || null,
+    year: parseInt(document.getElementById('vYear').value) || null,
+    notes: document.getElementById('vNotes').value.trim()
+  };
+
+  const index = document.getElementById('vIndex').value;
+  if (index === '') {
+    if (vehicles.some(v => v.name === name)) {
+      alert('A vehicle with this name already exists');
+      return;
+    }
+    vehicles.push(vehicle);
+  } else {
+    vehicles[parseInt(index)] = vehicle;
+  }
+
   save();
+  closeVehicleModal();
   updateVehicleSelect();
   renderVehicleList();
+}
+
+function editVehicle(index) {
+  openVehicleModal(index);
 }
 
 function removeVehicle(index) {
@@ -257,14 +371,14 @@ function updateStats() {
   document.getElementById('totalCost').innerHTML = `${cost.toLocaleString()} <span>THB</span>`;
 }
 
-function openModal() {
+function openChargeModal() {
   updateVehicleSelect();
-  document.getElementById('modal').classList.add('show');
+  document.getElementById('chargeModal').classList.add('show');
   document.getElementById('fDate').valueAsDate = new Date();
   document.body.style.overflow = 'hidden';
 }
-function closeModal() {
-  document.getElementById('modal').classList.remove('show');
+function closeChargeModal() {
+  document.getElementById('chargeModal').classList.remove('show');
   document.body.style.overflow = '';
 }
 
@@ -282,7 +396,7 @@ function addCharge() {
 
   charges.unshift({ date, station, car, kwh, cost });
   save();
-  closeModal();
+  closeChargeModal();
   render();
 
   document.getElementById('fStation').value = '';
