@@ -7,6 +7,7 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
   body { background: #f4f6f9; color: #1e293b; -webkit-tap-highlight-color: transparent; padding-bottom: 72px; }
+  body.locked { overflow: hidden; }
   @media (min-width: 768px) { body { padding-bottom: 0; } }
 
   .container { max-width: 1100px; margin: 0 auto; padding: 16px; }
@@ -70,7 +71,7 @@
   .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); align-items: flex-end; justify-content: center; z-index: 100; }
   @media (min-width: 640px) { .modal { align-items: center; padding: 16px; } }
   .modal.show { display: flex; }
-  .modal-box { background: #fff; width: 100%; max-width: 480px; border-radius: 16px 16px 0 0; padding: 20px; max-height: 90vh; overflow-y: auto; }
+  .modal-box { background: #fff; width: 100%; max-width: 480px; border-radius: 16px 16px 0 0; padding: 20px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); max-height: 90vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   @media (min-width: 640px) { .modal-box { border-radius: 12px; padding: 24px; } }
   .modal-box h2 { font-size: 18px; margin-bottom: 16px; }
   .form-group { margin-bottom: 14px; }
@@ -116,7 +117,7 @@
 
   <div id="page-charge" class="page">
     <div style="margin-bottom:16px;">
-      <button class="btn" onclick="openChargeModal()">+ Add Charge</button>
+      <button class="btn full" onclick="openChargeModal()">+ Add Charge</button>
     </div>
     <div class="table-wrap">
       <table>
@@ -151,7 +152,7 @@
 </nav>
 
 <div class="modal" id="chargeModal">
-  <div class="modal-box">
+  <div class="modal-box" onclick="event.stopPropagation()">
     <h2>Add Charge</h2>
     <div class="form-group">
       <label>Date</label>
@@ -393,12 +394,17 @@ function updateStats() {
 
 function openChargeModal() {
   updateVehicleSelect();
-  document.getElementById('chargeModal').classList.add('show');
+  document.getElementById('fStation').value = '';
+  document.getElementById('fKwh').value = '';
+  document.getElementById('fCost').value = '';
   document.getElementById('fDate').valueAsDate = new Date();
+  document.getElementById('chargeModal').classList.add('show');
+  document.body.classList.add('locked');
   document.body.style.overflow = 'hidden';
 }
 function closeChargeModal() {
   document.getElementById('chargeModal').classList.remove('show');
+  document.body.classList.remove('locked');
   document.body.style.overflow = '';
 }
 
@@ -423,6 +429,17 @@ function addCharge() {
   document.getElementById('fKwh').value = '';
   document.getElementById('fCost').value = '';
 }
+
+document.getElementById('chargeModal').addEventListener('click', function(e) {
+  if (e.target === this) closeChargeModal();
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Escape') return;
+  if (document.getElementById('chargeModal').classList.contains('show')) {
+    closeChargeModal();
+  }
+});
 
 updateVehicleSelect();
 render();
