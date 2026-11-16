@@ -4,7 +4,7 @@
 
 This document is the source of truth for what EV Charging Expenses does. It defines behaviour, data and rules. It does not prescribe a technology stack; that is covered by a separate implementation document.
 
-`index.html` in this repository is the **visual reference** for layout, styling and interaction feel. Where the HTML and this document disagree about behaviour, this document wins. Section 11 lists the places where they are known to differ.
+`index.html` in this repository is the **visual reference** for layout, styling, interaction feel and wording. Where the HTML and this document disagree about behaviour, this document wins. Section 11 lists the places where they are known to differ.
 
 The words **must** and **must not** mark requirements.
 
@@ -19,6 +19,7 @@ EV Charging Expenses lets an electric-vehicle owner log each charging session an
 - A filterable list of charging sessions, with add, edit and delete.
 - Management of vehicles, charging providers and provider branches.
 - A light and dark appearance.
+- English and Thai, switchable in the app.
 
 **Out of scope**
 
@@ -105,7 +106,7 @@ A new user starts with:
 
 - Vehicles, providers, branches and sessions must persist until the user deletes them.
 - The monthly budget must persist with the user's account.
-- The dark mode choice must persist on the device.
+- The dark mode choice and the language choice must persist on the device.
 - The vehicle selection, the dashboard period, the session filters and the expanded provider are view state. They reset when the app is reloaded.
 
 ### 4.7 User settings
@@ -156,11 +157,11 @@ The Dashboard shows these elements, in this order:
 | Monthly Budget | No | No | Progress against the budget for the current month. Shown only when a budget is set. |
 | Avg. Cost / kWh | Yes | Yes | Cost in the period divided by energy in the period. Shows `—` when the period has no energy. |
 | Home vs Public | Yes | Yes | For each type: the cost in the period and the average cost per kWh. |
-| By Provider (Public) | Yes | Yes | Cost per provider for public sessions in the period, highest first, top five only. Shows "No public sessions" when empty. |
+| By Provider (Public) | Yes | Yes | Cost per provider for public sessions in the period, highest first, top five only. The provider name is on the left and the cost on the right. Shows "No public sessions" when empty. |
 | Monthly Spending | No | Yes | Bar chart of the last six calendar months, ending with the current month, oldest on the left. |
 | Recent Sessions | No | Yes | The five most recent sessions as session cards. Shows "No sessions yet" when empty. |
 
-Each period card's label names the selected period, for example "Total Cost · This month".
+Card labels do not repeat the period. The period selector is the only place it is named.
 
 **Change against the comparison range**
 
@@ -171,9 +172,10 @@ Each period card's label names the selected period, for example "Total Cost · T
 
 **Home vs Public**
 
-- Each type shows its cost and its average cost per kWh, for example `Home ฿820 · ฿5.40/kWh`.
+- The card is a small table: the type name on the left, and its cost with its average cost per kWh on the right, for example `Home` · `฿820` · `฿5.40/kWh`.
 - A type with no energy in the period shows `—` for its rate.
-- When both types have a rate, a third line shows how much more public charging costs per kWh, for example `Public costs ฿2.35/kWh more`. If public is cheaper, the line reads `Public costs ฿0.40/kWh less`.
+- When both types have a rate, a final row labelled "Public vs Home" shows the public rate minus the home rate as a signed figure, for example `+฿2.35/kWh`, or `−฿0.40/kWh` when public is cheaper.
+- The difference is shown as a signed number, not a sentence, so that it reads the same in every language.
 
 **Monthly Budget card**
 
@@ -248,9 +250,10 @@ A bottom sheet covering 75% of the screen height over a dimmed backdrop. The for
 
 ### 6.6 Settings
 
-Four cards:
+Five cards:
 
 - **Dark Mode:** a toggle switch.
+- **Language:** a selector listing each language by its own name ("English", "ไทย"). The change applies immediately, without a reload.
 - **Monthly Budget:** shows the current budget, or "Not set". Opens the budget dialog.
 - **Vehicles:** opens the Vehicles screen.
 - **Chargers:** opens the Chargers screen.
@@ -313,6 +316,8 @@ For a session, the message shows its date, vehicle and cost.
 - A comparison range that is cut to "the same number of days" starts on the first day of the earlier period and never runs past that period's last day.
 - Costs are stored exactly as entered. Rounding is for display only. Percentages and differences are calculated from the stored values, not the rounded ones.
 
+Numbers and month names follow the selected language's conventions. The examples below are for English.
+
 | Value | Format | Example |
 |---|---|---|
 | Cost totals and session card cost | `฿` and whole baht, rounded half up | `฿1,240` |
@@ -371,8 +376,39 @@ All user-entered text (names, plates, notes) must be displayed as plain text. It
 | Session delete | Swipe only. | Swipe, plus a Delete action in the Edit Session dialog. |
 | Sub-screens | No tab highlighted. | Settings tab stays highlighted. |
 | Monthly budget | Starts at ฿2,000 and resets on reload. | Starts empty and persists per user. |
-| Home vs Public | Each type's rate is on its own line. | Layout may follow the reference; the content is as in section 6.2. |
 | Add new branch | Browser prompt. | In-app input. |
 | Errors | Browser alerts, or silent. | In-app error messages. |
 | Vehicle details | Shows empty separators. | Empty details are left out. |
 | Zoom | Disabled. | Allowed. |
+
+## 12. Languages and translation
+
+The app supports English (the default) and Thai. Section 6.6 defines how the user switches.
+
+**What is translated**
+
+- All interface text: labels, buttons, messages, placeholders, empty states and errors.
+- Number separators and month names, which follow the selected language.
+
+**What is not translated**
+
+- Anything the user typed: vehicle names, provider and branch names, plates and notes.
+- The default provider and branch names in section 4.5.
+- Dates, which stay `YYYY-MM-DD`, the `฿` symbol and the unit `kWh`.
+- Stored values. A session's type is stored as `Home` or `Public` whatever language is shown.
+
+**Rules for interface text**
+
+These keep the app translatable and apply to every language added later.
+
+- Every visible phrase must come from a single string table per language. No interface text may be written directly in screen code.
+- A phrase must be stored whole, with named placeholders for the values inside it, for example `{spent} of {budget} · {rest} left`. Sentences must not be assembled from fragments, because word order differs between languages.
+- Where wording depends on a condition, each outcome must be its own complete phrase. "left" and "over" on the budget card are two phrases, not one phrase with a swapped word.
+- Where wording depends on a count, the phrase must use the language's plural rules, for example `1 branch` and `2 branches`.
+- A value should be shown as a labelled figure in preference to a sentence wherever that is clear enough.
+- A missing translation falls back to English.
+- Layout must not depend on text length. Labels may wrap, and figures stay aligned to the right.
+
+Adding a language must require only a new string table and an entry in the language selector.
+
+The Thai wording in `index.html` is a first draft and needs review by a native speaker before release.

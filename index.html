@@ -194,6 +194,11 @@
   .budget-fill { height: 100%; border-radius: 999px; transition: width .3s; }
   .budget-line { position: absolute; left: 0; right: 0; border-top: 2px dashed #d97706; pointer-events: none; }
   .budget-line span { position: absolute; right: 0; top: -16px; font-size: 10px; color: #d97706; font-weight: 600; }
+  .type-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .type-value { margin-left: auto; text-align: right; }
+  .type-value small { display: block; color: var(--muted); }
+  .type-diff { margin: 8px 0 0; padding-top: 8px; border-top: 1px solid var(--border); font-size: 13px; color: var(--muted); }
+  .type-diff strong { color: var(--text); }
   .dialog-error { color: #dc2626; font-size: 13px; margin: -4px 0 12px; display: none; }
 </style>
 </head>
@@ -201,75 +206,75 @@
 
 <div id="login" class="screen active">
   <div class="login-box">
-    <h1 style="text-align:center; margin-bottom:24px;">⚡ EV Charging Expenses</h1>
-    <label class="label">Username</label>
-    <input id="username" type="text" placeholder="Username">
-    <label class="label">Password</label>
-    <input id="password" type="password" placeholder="Password">
-    <button class="secondary" onclick="fillDemo()" style="width:100%; margin-bottom:8px;">Fill demo credentials</button>
-    <button class="primary" onclick="login()">Login</button>
+    <h1 style="text-align:center; margin-bottom:24px;">⚡ <span data-i18n="app.title">EV Charging Expenses</span></h1>
+    <label class="label" data-i18n="login.username">Username</label>
+    <input id="username" type="text" placeholder="Username" data-i18n-placeholder="login.username">
+    <label class="label" data-i18n="login.password">Password</label>
+    <input id="password" type="password" placeholder="Password" data-i18n-placeholder="login.password">
+    <button class="secondary" onclick="fillDemo()" style="width:100%; margin-bottom:8px;" data-i18n="login.demo">Fill demo credentials</button>
+    <button class="primary" onclick="login()" data-i18n="login.submit">Login</button>
   </div>
 </div>
 
 <div id="dashboard" class="screen">
   <header>
-    <h1>⚡ EV Charging</h1>
-    <button class="secondary" onclick="logout()">Log out</button>
+    <h1>⚡ <span data-i18n="app.short">EV Charging</span></h1>
+    <button class="secondary" onclick="logout()" data-i18n="common.logout">Log out</button>
   </header>
   <div class="row">
     <select class="vehicle-select" id="vehicleSelect" onchange="renderAll()" style="flex:1; min-width:0;"></select>
     <select id="periodSelect" onchange="renderDashboard()" style="flex:1; min-width:0;">
-      <option value="month">This month</option>
-      <option value="lastMonth">Last month</option>
-      <option value="3months">Last 3 months</option>
-      <option value="year">This year</option>
-      <option value="all">All time</option>
+      <option value="month" data-i18n="period.month">This month</option>
+      <option value="lastMonth" data-i18n="period.lastMonth">Last month</option>
+      <option value="3months" data-i18n="period.3months">Last 3 months</option>
+      <option value="year" data-i18n="period.year">This year</option>
+      <option value="all" data-i18n="period.all">All time</option>
     </select>
   </div>
   <div class="card">
-    <div class="label" id="totalLabel">Total Cost</div>
+    <div class="label" data-i18n="dash.total">Total Cost</div>
     <div class="kpi" id="periodTotal">฿0</div>
     <div class="delta" id="periodDelta" style="display:none;"></div>
     <div id="allTimeWrap">
-      <div class="label" style="margin-top:8px;">All-time Total</div>
+      <div class="label" style="margin-top:8px;" data-i18n="dash.allTime">All-time Total</div>
       <div id="allTimeTotal" style="font-size:18px; font-weight:600;">฿0</div>
     </div>
   </div>
   <div class="card" id="budgetCard" onclick="openBudgetDialog()" style="display:none; cursor:pointer;">
-    <div class="label">Monthly Budget · All vehicles</div>
+    <div class="label" data-i18n="dash.budget">Monthly Budget · All vehicles</div>
     <div id="budgetText" style="font-size:15px; font-weight:600;"></div>
     <div class="budget-track"><div class="budget-fill" id="budgetFill"></div></div>
   </div>
   <div class="row">
     <div class="card">
-      <div class="label" id="avgLabel">Avg. Cost / kWh</div>
+      <div class="label" data-i18n="dash.avg">Avg. Cost / kWh</div>
       <div class="kpi" id="avgCost" style="font-size:22px;">฿0</div>
     </div>
     <div class="card">
-      <div class="label" id="typeLabel">Home vs Public</div>
+      <div class="label" data-i18n="dash.homeVsPublic">Home vs Public</div>
       <div id="typeBreakdown"></div>
     </div>
   </div>
   <div class="card">
-    <div class="label" id="providerLabel">By Provider (Public)</div>
+    <div class="label" data-i18n="dash.byProvider" style="margin-bottom:8px;">By Provider (Public)</div>
     <div id="providerBreakdown"></div>
   </div>
   <div class="card">
-    <div class="label">Monthly Spending</div>
+    <div class="label" data-i18n="dash.monthly">Monthly Spending</div>
     <div class="chart" id="chart"></div>
   </div>
-  <div class="label" style="margin-bottom:8px;">Recent Sessions</div>
+  <div class="label" style="margin-bottom:8px;" data-i18n="dash.recent">Recent Sessions</div>
   <div id="recentList"></div>
 </div>
 
 <div id="sessions" class="screen">
-  <header><h1>Sessions</h1></header>
+  <header><h1 data-i18n="sessions.title">Sessions</h1></header>
   <div class="filters">
     <select id="filterMonth" onchange="renderSessions()"><option value="">All months</option></select>
     <select id="filterType" onchange="renderSessions()">
-      <option value="">All types</option>
-      <option value="Home">Home</option>
-      <option value="Public">Public</option>
+      <option value="" data-i18n="filter.allTypes">All types</option>
+      <option value="Home" data-i18n="type.home">Home</option>
+      <option value="Public" data-i18n="type.public">Public</option>
     </select>
     <select id="filterProvider" onchange="renderSessions()"><option value="">All providers</option></select>
   </div>
@@ -285,48 +290,48 @@
     </div>
     <form id="sessionForm" onsubmit="saveSession(event)" style="flex:1; overflow-y:auto; padding:16px 20px;">
       <input type="hidden" id="editId">
-      <label class="label">Vehicle</label>
+      <label class="label" data-i18n="field.vehicle">Vehicle</label>
       <select id="addVehicle" required></select>
-      <label class="label">Date</label>
+      <label class="label" data-i18n="field.date">Date</label>
       <input type="date" id="addDate" required>
-      <label class="label">Cost (THB)</label>
+      <label class="label" data-i18n="field.cost">Cost (THB)</label>
       <input type="number" id="addCost" step="0.01" min="0" required>
-      <label class="label">Energy (kWh)</label>
+      <label class="label" data-i18n="field.energy">Energy (kWh)</label>
       <input type="number" id="addKwh" step="0.1" min="0" required>
-      <label class="label">Type</label>
+      <label class="label" data-i18n="field.type">Type</label>
       <select id="addType" onchange="togglePublic()">
-        <option value="Home">Home</option>
-        <option value="Public">Public</option>
+        <option value="Home" data-i18n="type.home">Home</option>
+        <option value="Public" data-i18n="type.public">Public</option>
       </select>
       <div id="publicFields" style="display:none;">
-        <label class="label">Provider</label>
+        <label class="label" data-i18n="field.provider">Provider</label>
         <select id="addProvider" onchange="updateBranches()"></select>
-        <label class="label">Branch</label>
+        <label class="label" data-i18n="field.branch">Branch</label>
         <select id="addBranch"></select>
-        <button type="button" class="secondary" onclick="addBranchOnFly()" style="width:100%; margin-bottom:12px;">+ Add new branch</button>
+        <button type="button" class="secondary" onclick="addBranchOnFly()" style="width:100%; margin-bottom:12px;" data-i18n="field.addBranch">+ Add new branch</button>
       </div>
-      <label class="label">Start Battery % (optional)</label>
+      <label class="label" data-i18n="field.start">Start Battery % (optional)</label>
       <input type="number" id="addStart" min="0" max="100">
-      <label class="label">End Battery % (optional)</label>
+      <label class="label" data-i18n="field.end">End Battery % (optional)</label>
       <input type="number" id="addEnd" min="0" max="100">
-      <label class="label">Duration minutes (optional)</label>
+      <label class="label" data-i18n="field.duration">Duration minutes (optional)</label>
       <input type="number" id="addDuration" min="0">
-      <label class="label">Note (optional)</label>
+      <label class="label" data-i18n="field.note">Note (optional)</label>
       <textarea id="addNote" rows="2"></textarea>
     </form>
     <div style="display:flex; gap:12px; padding:12px 20px 20px; background:var(--card); border-top:1px solid var(--border);">
-      <button type="button" class="secondary" onclick="closeSessionDialog()" style="flex:1; margin:0;">Cancel</button>
-      <button class="primary" type="submit" form="sessionForm" style="flex:1; margin:0;">Save Session</button>
+      <button type="button" class="secondary" onclick="closeSessionDialog()" style="flex:1; margin:0;" data-i18n="common.cancel">Cancel</button>
+      <button class="primary" type="submit" form="sessionForm" style="flex:1; margin:0;" data-i18n="session.save">Save Session</button>
     </div>
   </div>
 </div>
 
 <div id="settings" class="screen">
-  <header><h1>Settings</h1></header>
+  <header><h1 data-i18n="settings.title">Settings</h1></header>
   <div class="card theme-toggle">
     <div>
-      <strong>🌙 Dark Mode</strong>
-      <div class="label">Toggle light / dark appearance</div>
+      <strong>🌙 <span data-i18n="settings.dark">Dark Mode</span></strong>
+      <div class="label" data-i18n="settings.darkHint">Toggle light / dark appearance</div>
     </div>
     <label style="position:relative; display:inline-block; width:48px; height:28px;">
       <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()" style="opacity:0; width:0; height:0;">
@@ -334,28 +339,38 @@
       <span style="position:absolute; height:22px; width:22px; left:3px; bottom:3px; background:white; border-radius:50%; transition:.3s;"></span>
     </label>
   </div>
+  <div class="card theme-toggle">
+    <div>
+      <strong>🌐 <span data-i18n="settings.language">Language</span></strong>
+      <div class="label" data-i18n="settings.languageHint">Text, numbers and month names</div>
+    </div>
+    <select id="languageSelect" onchange="setLanguage(this.value)" style="width:auto; margin:0;">
+      <option value="en">English</option>
+      <option value="th">ไทย</option>
+    </select>
+  </div>
   <div class="card theme-toggle" onclick="openBudgetDialog()" style="cursor:pointer;">
     <div>
-      <strong>🎯 Monthly Budget</strong>
-      <div class="label">Spending target across all vehicles</div>
+      <strong>🎯 <span data-i18n="settings.budget">Monthly Budget</span></strong>
+      <div class="label" data-i18n="settings.budgetHint">Spending target across all vehicles</div>
     </div>
     <div id="budgetSettingValue" style="font-weight:600; white-space:nowrap;">Not set</div>
   </div>
   <div class="card" onclick="show('vehicles')" style="cursor:pointer;">
-    <strong>🚗 Vehicles</strong>
-    <div class="label">Add, rename, or manage your vehicles</div>
+    <strong>🚗 <span data-i18n="settings.vehicles">Vehicles</span></strong>
+    <div class="label" data-i18n="settings.vehiclesHint">Add, rename, or manage your vehicles</div>
   </div>
   <div class="card" onclick="show('chargers')" style="cursor:pointer;">
-    <strong>🔌 Chargers</strong>
-    <div class="label">Manage providers and branches</div>
+    <strong>🔌 <span data-i18n="settings.chargers">Chargers</span></strong>
+    <div class="label" data-i18n="settings.chargersHint">Manage providers and branches</div>
   </div>
 </div>
 
 <div id="vehicles" class="screen">
   <header>
-    <button class="secondary" onclick="show('settings')" style="width:auto; padding:6px 12px;">← Back</button>
-    <h1>Vehicles</h1>
-    <button class="primary" onclick="openVehicleDialog()" style="width:auto; padding:8px 14px; margin:0;">+ Add</button>
+    <button class="secondary" onclick="show('settings')" style="width:auto; padding:6px 12px;" data-i18n="common.back">← Back</button>
+    <h1 data-i18n="vehicles.title">Vehicles</h1>
+    <button class="primary" onclick="openVehicleDialog()" style="width:auto; padding:8px 14px; margin:0;" data-i18n="common.add">+ Add</button>
   </header>
   <div id="vehicleGrid" style="display:grid; grid-template-columns:1fr; gap:12px;"></div>
 </div>
@@ -363,14 +378,14 @@
 <!-- Budget Dialog -->
 <div id="budgetDialog" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; align-items:center; justify-content:center;">
   <div style="background:var(--card); color:var(--text); border-radius:20px; padding:20px; width:90%; max-width:340px; margin:20px;">
-    <h2 style="margin-bottom:16px;">Monthly Budget</h2>
-    <label class="label">Amount (THB)</label>
-    <input id="budgetDialogAmount" type="text" inputmode="decimal" placeholder="e.g. 2000">
-    <div class="dialog-error" id="budgetDialogError">Enter an amount above zero with up to two decimals.</div>
-    <div class="label" style="margin-bottom:16px;">Leave empty to remove the budget.</div>
+    <h2 style="margin-bottom:16px;" data-i18n="settings.budget">Monthly Budget</h2>
+    <label class="label" data-i18n="budgetDialog.amount">Amount (THB)</label>
+    <input id="budgetDialogAmount" type="text" inputmode="decimal" placeholder="e.g. 2000" data-i18n-placeholder="budgetDialog.placeholder">
+    <div class="dialog-error" id="budgetDialogError" data-i18n="budgetDialog.error">Enter an amount above zero with up to two decimals.</div>
+    <div class="label" style="margin-bottom:16px;" data-i18n="budgetDialog.hint">Leave empty to remove the budget.</div>
     <div style="display:flex; gap:8px;">
-      <button class="secondary" onclick="closeBudgetDialog()" style="flex:1;">Cancel</button>
-      <button class="primary" onclick="saveBudgetDialog()" style="flex:1; margin:0;">Save</button>
+      <button class="secondary" onclick="closeBudgetDialog()" style="flex:1;" data-i18n="common.cancel">Cancel</button>
+      <button class="primary" onclick="saveBudgetDialog()" style="flex:1; margin:0;" data-i18n="common.save">Save</button>
     </div>
   </div>
 </div>
@@ -381,8 +396,8 @@
     <h2 id="deleteDialogTitle" style="margin-bottom:12px;">Confirm Delete</h2>
     <p id="deleteDialogMessage" style="margin-bottom:20px; color:#555;"></p>
     <div style="display:flex; gap:8px;">
-      <button class="secondary" onclick="closeDeleteDialog()" style="flex:1;">Cancel</button>
-      <button class="primary" id="deleteDialogConfirm" style="flex:1; margin:0; background:#dc2626;">Delete</button>
+      <button class="secondary" onclick="closeDeleteDialog()" style="flex:1;" data-i18n="common.cancel">Cancel</button>
+      <button class="primary" id="deleteDialogConfirm" style="flex:1; margin:0; background:#dc2626;" data-i18n="common.delete">Delete</button>
     </div>
   </div>
 </div>
@@ -391,27 +406,27 @@
 <div id="vehicleDialog" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; align-items:center; justify-content:center;">
   <div style="background:white; border-radius:20px; padding:20px; width:90%; max-width:340px; margin:20px; max-height:90vh; overflow-y:auto;">
     <h2 id="vehicleDialogTitle" style="margin-bottom:16px;">Add Vehicle</h2>
-    <label class="label">Display Name</label>
-    <input id="vehicleDialogName" placeholder="e.g. Daily Driver" style="margin-bottom:12px;">
-    <label class="label">Brand</label>
-    <input id="vehicleDialogBrand" placeholder="e.g. Tesla" style="margin-bottom:12px;">
-    <label class="label">Model</label>
-    <input id="vehicleDialogModel" placeholder="e.g. Model Y" style="margin-bottom:12px;">
-    <label class="label">License Plate</label>
-    <input id="vehicleDialogPlate" placeholder="e.g. กท 1234" style="margin-bottom:16px;">
+    <label class="label" data-i18n="vehicle.name">Display Name</label>
+    <input id="vehicleDialogName" placeholder="e.g. Daily Driver" data-i18n-placeholder="vehicle.namePlaceholder" style="margin-bottom:12px;">
+    <label class="label" data-i18n="vehicle.brand">Brand</label>
+    <input id="vehicleDialogBrand" placeholder="e.g. Tesla" data-i18n-placeholder="vehicle.brandPlaceholder" style="margin-bottom:12px;">
+    <label class="label" data-i18n="vehicle.model">Model</label>
+    <input id="vehicleDialogModel" placeholder="e.g. Model Y" data-i18n-placeholder="vehicle.modelPlaceholder" style="margin-bottom:12px;">
+    <label class="label" data-i18n="vehicle.plate">License Plate</label>
+    <input id="vehicleDialogPlate" placeholder="e.g. กท 1234" data-i18n-placeholder="vehicle.platePlaceholder" style="margin-bottom:16px;">
     <input type="hidden" id="vehicleDialogOld">
     <div style="display:flex; gap:8px;">
-      <button class="secondary" onclick="closeVehicleDialog()" style="flex:1;">Cancel</button>
-      <button class="primary" onclick="saveVehicleDialog()" style="flex:1; margin:0;">Save</button>
+      <button class="secondary" onclick="closeVehicleDialog()" style="flex:1;" data-i18n="common.cancel">Cancel</button>
+      <button class="primary" onclick="saveVehicleDialog()" style="flex:1; margin:0;" data-i18n="common.save">Save</button>
     </div>
   </div>
 </div>
 
 <div id="chargers" class="screen">
   <header>
-    <button class="secondary" onclick="show('settings')" style="width:auto; padding:6px 12px;">← Back</button>
-    <h1>Chargers</h1>
-    <button class="primary" onclick="openProviderDialog()" style="width:auto; padding:8px 14px; margin:0;">+ Add</button>
+    <button class="secondary" onclick="show('settings')" style="width:auto; padding:6px 12px;" data-i18n="common.back">← Back</button>
+    <h1 data-i18n="chargers.title">Chargers</h1>
+    <button class="primary" onclick="openProviderDialog()" style="width:auto; padding:8px 14px; margin:0;" data-i18n="common.add">+ Add</button>
   </header>
   <div id="providerCards"></div>
 </div>
@@ -420,11 +435,11 @@
 <div id="providerDialog" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; align-items:center; justify-content:center;">
   <div style="background:white; border-radius:20px; padding:20px; width:90%; max-width:340px; margin:20px;">
     <h2 id="providerDialogTitle" style="margin-bottom:16px;">Add Provider</h2>
-    <input id="providerDialogName" placeholder="Provider name" style="margin-bottom:16px;">
+    <input id="providerDialogName" placeholder="Provider name" data-i18n-placeholder="provider.placeholder" style="margin-bottom:16px;">
     <input type="hidden" id="providerDialogOld">
     <div style="display:flex; gap:8px;">
-      <button class="secondary" onclick="closeProviderDialog()" style="flex:1;">Cancel</button>
-      <button class="primary" onclick="saveProviderDialog()" style="flex:1; margin:0;">Save</button>
+      <button class="secondary" onclick="closeProviderDialog()" style="flex:1;" data-i18n="common.cancel">Cancel</button>
+      <button class="primary" onclick="saveProviderDialog()" style="flex:1; margin:0;" data-i18n="common.save">Save</button>
     </div>
   </div>
 </div>
@@ -433,30 +448,317 @@
 <div id="branchDialog" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; align-items:center; justify-content:center;">
   <div style="background:white; border-radius:20px; padding:20px; width:90%; max-width:340px; margin:20px;">
     <h2 id="branchDialogTitle" style="margin-bottom:16px;">Add Branch</h2>
-    <input id="branchDialogName" placeholder="Branch name" style="margin-bottom:16px;">
+    <input id="branchDialogName" placeholder="Branch name" data-i18n-placeholder="branch.placeholder" style="margin-bottom:16px;">
     <input type="hidden" id="branchDialogProvider">
     <input type="hidden" id="branchDialogOld">
     <div style="display:flex; gap:8px;">
-      <button class="secondary" onclick="closeBranchDialog()" style="flex:1;">Cancel</button>
-      <button class="primary" onclick="saveBranchDialog()" style="flex:1; margin:0;">Save</button>
+      <button class="secondary" onclick="closeBranchDialog()" style="flex:1;" data-i18n="common.cancel">Cancel</button>
+      <button class="primary" onclick="saveBranchDialog()" style="flex:1; margin:0;" data-i18n="common.save">Save</button>
     </div>
   </div>
 </div>
 
 <nav id="nav" style="display:none;">
   <button onclick="show('dashboard')" data-screen="dashboard" class="active">
-    <span class="icon">🏠</span>Dashboard
+    <span class="icon">🏠</span><span data-i18n="nav.dashboard">Dashboard</span>
   </button>
   <button onclick="show('sessions')" data-screen="sessions">
-    <span class="icon">📋</span>Sessions
+    <span class="icon">📋</span><span data-i18n="nav.sessions">Sessions</span>
   </button>
   <button onclick="show('settings')" data-screen="settings">
-    <span class="icon">⚙️</span>Settings
+    <span class="icon">⚙️</span><span data-i18n="nav.settings">Settings</span>
   </button>
 </nav>
 <button class="fab" id="fab" style="display:none;" onclick="openSessionDialog()">+</button>
 
 <script>
+// ---------------------------------------------------------------------------
+// Translations. Every visible phrase lives here as one complete string.
+// Placeholders are written as {name}. To add a language, copy the "en" block,
+// translate the values, and add it to the Language select in Settings.
+// ---------------------------------------------------------------------------
+const STRINGS = {
+  en: {
+    "app.title": "EV Charging Expenses",
+    "app.short": "EV Charging",
+    "login.username": "Username",
+    "login.password": "Password",
+    "login.demo": "Fill demo credentials",
+    "login.submit": "Login",
+    "common.logout": "Log out",
+    "common.cancel": "Cancel",
+    "common.save": "Save",
+    "common.delete": "Delete",
+    "common.edit": "Edit",
+    "common.back": "← Back",
+    "common.add": "+ Add",
+    "nav.dashboard": "Dashboard",
+    "nav.sessions": "Sessions",
+    "nav.settings": "Settings",
+    "type.home": "Home",
+    "type.public": "Public",
+    "period.month": "This month",
+    "period.lastMonth": "Last month",
+    "period.3months": "Last 3 months",
+    "period.year": "This year",
+    "period.all": "All time",
+    "cmp.month": "{change} vs last month",
+    "cmp.lastMonth": "{change} vs the month before",
+    "cmp.3months": "{change} vs previous 3 months",
+    "cmp.year": "{change} vs last year",
+    "dash.total": "Total Cost",
+    "dash.allTime": "All-time Total",
+    "dash.budget": "Monthly Budget · All vehicles",
+    "dash.avg": "Avg. Cost / kWh",
+    "dash.homeVsPublic": "Home vs Public",
+    "dash.publicVsHome": "Public vs Home",
+    "dash.byProvider": "By Provider (Public)",
+    "dash.monthly": "Monthly Spending",
+    "dash.recent": "Recent Sessions",
+    "dash.noPublic": "No public sessions",
+    "dash.noSessions": "No sessions yet",
+    "dash.budgetLine": "Budget",
+    "rate": "{amount}/kWh",
+    "energy": "{amount} kWh",
+    "budget.left": "{spent} of {budget} · {rest} left",
+    "budget.over": "{spent} of {budget} · {rest} over",
+    "filter.allVehicles": "All vehicles",
+    "filter.allMonths": "All months",
+    "filter.allTypes": "All types",
+    "filter.allProviders": "All providers",
+    "sessions.title": "Sessions",
+    "sessions.none": "No sessions match the filters",
+    "session.add": "Add Session",
+    "session.edit": "Edit Session",
+    "session.save": "Save Session",
+    "field.vehicle": "Vehicle",
+    "field.date": "Date",
+    "field.cost": "Cost (THB)",
+    "field.energy": "Energy (kWh)",
+    "field.type": "Type",
+    "field.provider": "Provider",
+    "field.branch": "Branch",
+    "field.addBranch": "+ Add new branch",
+    "field.start": "Start Battery % (optional)",
+    "field.end": "End Battery % (optional)",
+    "field.duration": "Duration minutes (optional)",
+    "field.note": "Note (optional)",
+    "settings.title": "Settings",
+    "settings.dark": "Dark Mode",
+    "settings.darkHint": "Toggle light / dark appearance",
+    "settings.language": "Language",
+    "settings.languageHint": "Text, numbers and month names",
+    "settings.budget": "Monthly Budget",
+    "settings.budgetHint": "Spending target across all vehicles",
+    "settings.budgetValue": "{amount} / month",
+    "settings.notSet": "Not set",
+    "settings.vehicles": "Vehicles",
+    "settings.vehiclesHint": "Add, rename, or manage your vehicles",
+    "settings.chargers": "Chargers",
+    "settings.chargersHint": "Manage providers and branches",
+    "budgetDialog.amount": "Amount (THB)",
+    "budgetDialog.placeholder": "e.g. 2000",
+    "budgetDialog.error": "Enter an amount above zero with up to two decimals.",
+    "budgetDialog.hint": "Leave empty to remove the budget.",
+    "vehicles.title": "Vehicles",
+    "vehicles.none": "No vehicles yet",
+    "vehicle.add": "Add Vehicle",
+    "vehicle.edit": "Edit Vehicle",
+    "vehicle.name": "Display Name",
+    "vehicle.brand": "Brand",
+    "vehicle.model": "Model",
+    "vehicle.plate": "License Plate",
+    "vehicle.namePlaceholder": "e.g. Daily Driver",
+    "vehicle.brandPlaceholder": "e.g. Tesla",
+    "vehicle.modelPlaceholder": "e.g. Model Y",
+    "vehicle.platePlaceholder": "e.g. กท 1234",
+    "chargers.title": "Chargers",
+    "chargers.none": "No providers yet",
+    "chargers.noBranches": "No branches yet",
+    "chargers.addBranch": "+ Add Branch",
+    "chargers.branchCount.one": "{n} branch",
+    "chargers.branchCount.other": "{n} branches",
+    "provider.add": "Add Provider",
+    "provider.edit": "Edit Provider",
+    "provider.placeholder": "Provider name",
+    "branch.add": "Add Branch",
+    "branch.edit": "Edit Branch",
+    "branch.placeholder": "Branch name",
+    "branch.prompt": "New branch name:",
+    "delete.title": "Confirm Delete",
+    "delete.vehicle.title": "Delete Vehicle",
+    "delete.vehicle.message": "Delete “{name}”? Existing sessions will keep the old name.",
+    "delete.session.title": "Delete Session",
+    "delete.session.message": "Delete this session? {date} · {vehicle} · {cost}",
+    "delete.provider.title": "Delete Provider",
+    "delete.provider.message": "Delete “{name}” and all its branches?",
+    "delete.branch.title": "Delete Branch",
+    "delete.branch.message": "Delete branch “{branch}” from {provider}?",
+    "error.providerExists": "Provider already exists",
+    "error.branchExists": "Branch already exists",
+    "error.vehicleExists": "Vehicle name already exists"
+  },
+  th: {
+    "app.title": "ค่าชาร์จรถ EV",
+    "app.short": "ค่าชาร์จ EV",
+    "login.username": "ชื่อผู้ใช้",
+    "login.password": "รหัสผ่าน",
+    "login.demo": "กรอกข้อมูลตัวอย่าง",
+    "login.submit": "เข้าสู่ระบบ",
+    "common.logout": "ออกจากระบบ",
+    "common.cancel": "ยกเลิก",
+    "common.save": "บันทึก",
+    "common.delete": "ลบ",
+    "common.edit": "แก้ไข",
+    "common.back": "← กลับ",
+    "common.add": "+ เพิ่ม",
+    "nav.dashboard": "ภาพรวม",
+    "nav.sessions": "รายการชาร์จ",
+    "nav.settings": "ตั้งค่า",
+    "type.home": "บ้าน",
+    "type.public": "สาธารณะ",
+    "period.month": "เดือนนี้",
+    "period.lastMonth": "เดือนที่แล้ว",
+    "period.3months": "3 เดือนล่าสุด",
+    "period.year": "ปีนี้",
+    "period.all": "ทั้งหมด",
+    "cmp.month": "{change} เทียบกับเดือนที่แล้ว",
+    "cmp.lastMonth": "{change} เทียบกับเดือนก่อนหน้า",
+    "cmp.3months": "{change} เทียบกับ 3 เดือนก่อนหน้า",
+    "cmp.year": "{change} เทียบกับปีที่แล้ว",
+    "dash.total": "ค่าใช้จ่ายรวม",
+    "dash.allTime": "ยอดรวมทั้งหมด",
+    "dash.budget": "งบประมาณรายเดือน · รถทุกคัน",
+    "dash.avg": "ค่าเฉลี่ยต่อ kWh",
+    "dash.homeVsPublic": "บ้านเทียบกับสาธารณะ",
+    "dash.publicVsHome": "สาธารณะเทียบกับบ้าน",
+    "dash.byProvider": "ตามผู้ให้บริการ (สาธารณะ)",
+    "dash.monthly": "ค่าใช้จ่ายรายเดือน",
+    "dash.recent": "รายการล่าสุด",
+    "dash.noPublic": "ไม่มีการชาร์จสาธารณะ",
+    "dash.noSessions": "ยังไม่มีรายการชาร์จ",
+    "dash.budgetLine": "งบประมาณ",
+    "rate": "{amount}/kWh",
+    "energy": "{amount} kWh",
+    "budget.left": "{spent} จาก {budget} · เหลือ {rest}",
+    "budget.over": "{spent} จาก {budget} · เกิน {rest}",
+    "filter.allVehicles": "รถทุกคัน",
+    "filter.allMonths": "ทุกเดือน",
+    "filter.allTypes": "ทุกประเภท",
+    "filter.allProviders": "ผู้ให้บริการทั้งหมด",
+    "sessions.title": "รายการชาร์จ",
+    "sessions.none": "ไม่มีรายการที่ตรงกับตัวกรอง",
+    "session.add": "เพิ่มรายการชาร์จ",
+    "session.edit": "แก้ไขรายการชาร์จ",
+    "session.save": "บันทึกรายการ",
+    "field.vehicle": "รถ",
+    "field.date": "วันที่",
+    "field.cost": "ค่าใช้จ่าย (บาท)",
+    "field.energy": "พลังงาน (kWh)",
+    "field.type": "ประเภท",
+    "field.provider": "ผู้ให้บริการ",
+    "field.branch": "สาขา",
+    "field.addBranch": "+ เพิ่มสาขาใหม่",
+    "field.start": "แบตเตอรี่เริ่มต้น % (ไม่บังคับ)",
+    "field.end": "แบตเตอรี่สิ้นสุด % (ไม่บังคับ)",
+    "field.duration": "ระยะเวลา นาที (ไม่บังคับ)",
+    "field.note": "หมายเหตุ (ไม่บังคับ)",
+    "settings.title": "ตั้งค่า",
+    "settings.dark": "โหมดมืด",
+    "settings.darkHint": "สลับธีมสว่าง / มืด",
+    "settings.language": "ภาษา",
+    "settings.languageHint": "ข้อความ ตัวเลข และชื่อเดือน",
+    "settings.budget": "งบประมาณรายเดือน",
+    "settings.budgetHint": "เป้าหมายค่าใช้จ่ายของรถทุกคัน",
+    "settings.budgetValue": "{amount} / เดือน",
+    "settings.notSet": "ยังไม่ได้ตั้ง",
+    "settings.vehicles": "รถ",
+    "settings.vehiclesHint": "เพิ่ม เปลี่ยนชื่อ หรือจัดการรถของคุณ",
+    "settings.chargers": "สถานีชาร์จ",
+    "settings.chargersHint": "จัดการผู้ให้บริการและสาขา",
+    "budgetDialog.amount": "จำนวนเงิน (บาท)",
+    "budgetDialog.placeholder": "เช่น 2000",
+    "budgetDialog.error": "กรอกจำนวนเงินมากกว่าศูนย์ ทศนิยมไม่เกินสองตำแหน่ง",
+    "budgetDialog.hint": "เว้นว่างไว้เพื่อลบงบประมาณ",
+    "vehicles.title": "รถ",
+    "vehicles.none": "ยังไม่มีรถ",
+    "vehicle.add": "เพิ่มรถ",
+    "vehicle.edit": "แก้ไขรถ",
+    "vehicle.name": "ชื่อที่แสดง",
+    "vehicle.brand": "ยี่ห้อ",
+    "vehicle.model": "รุ่น",
+    "vehicle.plate": "ทะเบียนรถ",
+    "vehicle.namePlaceholder": "เช่น รถใช้ประจำวัน",
+    "vehicle.brandPlaceholder": "เช่น Tesla",
+    "vehicle.modelPlaceholder": "เช่น Model Y",
+    "vehicle.platePlaceholder": "เช่น กท 1234",
+    "chargers.title": "สถานีชาร์จ",
+    "chargers.none": "ยังไม่มีผู้ให้บริการ",
+    "chargers.noBranches": "ยังไม่มีสาขา",
+    "chargers.addBranch": "+ เพิ่มสาขา",
+    "chargers.branchCount.other": "{n} สาขา",
+    "provider.add": "เพิ่มผู้ให้บริการ",
+    "provider.edit": "แก้ไขผู้ให้บริการ",
+    "provider.placeholder": "ชื่อผู้ให้บริการ",
+    "branch.add": "เพิ่มสาขา",
+    "branch.edit": "แก้ไขสาขา",
+    "branch.placeholder": "ชื่อสาขา",
+    "branch.prompt": "ชื่อสาขาใหม่:",
+    "delete.title": "ยืนยันการลบ",
+    "delete.vehicle.title": "ลบรถ",
+    "delete.vehicle.message": "ลบ “{name}” ใช่ไหม รายการชาร์จเดิมจะยังใช้ชื่อเดิม",
+    "delete.session.title": "ลบรายการชาร์จ",
+    "delete.session.message": "ลบรายการนี้ใช่ไหม {date} · {vehicle} · {cost}",
+    "delete.provider.title": "ลบผู้ให้บริการ",
+    "delete.provider.message": "ลบ “{name}” และสาขาทั้งหมดใช่ไหม",
+    "delete.branch.title": "ลบสาขา",
+    "delete.branch.message": "ลบสาขา “{branch}” ออกจาก {provider} ใช่ไหม",
+    "error.providerExists": "มีผู้ให้บริการนี้อยู่แล้ว",
+    "error.branchExists": "มีสาขานี้อยู่แล้ว",
+    "error.vehicleExists": "มีรถชื่อนี้อยู่แล้ว"
+  }
+};
+
+const LOCALES = { en: "en-US", th: "th-TH" };
+let lang = STRINGS[localStorage.getItem("evmeapp-lang")] ? localStorage.getItem("evmeapp-lang") : "en";
+
+// Look up a phrase and fill its {placeholders}. Falls back to English.
+function t(key, params = {}) {
+  const text = STRINGS[lang][key] ?? STRINGS.en[key] ?? key;
+  return text.replace(/\{(\w+)\}/g, (_, name) => params[name] ?? "");
+}
+
+// Count-dependent phrase, e.g. "1 branch" / "2 branches". Uses the language's
+// own plural rules and falls back to the ".other" form.
+function tCount(key, n) {
+  const form = new Intl.PluralRules(LOCALES[lang]).select(n);
+  const full = STRINGS[lang][`${key}.${form}`] ? `${key}.${form}` : `${key}.other`;
+  return t(full, { n: n.toLocaleString(LOCALES[lang]) });
+}
+
+// Stored session types stay "Home" / "Public"; only the display is translated.
+function typeName(type) {
+  return t(type === "Home" ? "type.home" : "type.public");
+}
+
+// Fill every element marked data-i18n (text) or data-i18n-placeholder.
+function applyStaticStrings() {
+  document.documentElement.lang = lang;
+  document.title = t("app.title");
+  document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+  const sel = document.getElementById("languageSelect");
+  if (sel) sel.value = lang;
+}
+
+function setLanguage(code) {
+  if (!STRINGS[code]) return;
+  lang = code;
+  localStorage.setItem("evmeapp-lang", code);
+  applyStaticStrings();
+  renderAll();
+}
+
 const DEFAULT_PROVIDERS = {
   "EV Station PluZ": ["Bangna", "Vibhavadi", "Rama 9"],
   "EA Anywhere": ["Central World", "Siam Paragon", "Mega Bangna"],
@@ -602,9 +904,9 @@ function show(id) {
 }
 
 function getFilteredSessions() {
-  const vehicle = document.getElementById("vehicleSelect")?.value || "All vehicles";
+  const vehicle = document.getElementById("vehicleSelect")?.value || "";
   let list = state.sessions;
-  if (vehicle !== "All vehicles") list = list.filter(s => s.vehicle === vehicle);
+  if (vehicle) list = list.filter(s => s.vehicle === vehicle);
   return list;
 }
 
@@ -618,8 +920,8 @@ function renderAll() {
 function renderVehicleSelect() {
   const sel = document.getElementById("vehicleSelect");
   if (!sel) return;
-  const current = sel.value || "All vehicles";
-  sel.innerHTML = `<option value="All vehicles">All vehicles</option>` +
+  const current = sel.value;
+  sel.innerHTML = `<option value="">${t("filter.allVehicles")}</option>` +
     state.vehicles.map(v => `<option value="${v.name}" ${v.name === current ? "selected" : ""}>${v.name}</option>`).join("");
   sel.onchange = () => {
     renderAll();
@@ -627,11 +929,13 @@ function renderVehicleSelect() {
 }
 
 function fmtBaht(n) {
-  return "฿" + Math.round(n).toLocaleString("en-US");
+  return "฿" + Math.round(n).toLocaleString(LOCALES[lang]);
 }
 
+// Cost per kWh as a bare amount, e.g. "฿6.85". Shows a dash when there is no energy.
 function fmtRate(cost, kwh) {
-  return kwh ? "฿" + (cost / kwh).toFixed(2) : "—";
+  if (!kwh) return "—";
+  return "฿" + (cost / kwh).toLocaleString(LOCALES[lang], { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function ymd(d) {
@@ -661,24 +965,21 @@ function getPeriod() {
   };
   if (key === "month") {
     const start = new Date(y, m, 1), cmpStart = new Date(y, m - 1, 1);
-    return { label: "This month", start, end: today, cmpStart,
-      cmpEnd: cut(cmpStart, days(start, today), new Date(y, m, 0)), cmpName: "last month" };
+    return { key, start, end: today, cmpStart, cmpEnd: cut(cmpStart, days(start, today), new Date(y, m, 0)) };
   }
   if (key === "lastMonth") {
-    return { label: "Last month", start: new Date(y, m - 1, 1), end: new Date(y, m, 0),
-      cmpStart: new Date(y, m - 2, 1), cmpEnd: new Date(y, m - 1, 0), cmpName: "the month before" };
+    return { key, start: new Date(y, m - 1, 1), end: new Date(y, m, 0),
+      cmpStart: new Date(y, m - 2, 1), cmpEnd: new Date(y, m - 1, 0) };
   }
   if (key === "3months") {
     const start = new Date(y, m - 2, 1), cmpStart = new Date(y, m - 5, 1);
-    return { label: "Last 3 months", start, end: today, cmpStart,
-      cmpEnd: cut(cmpStart, days(start, today), new Date(y, m - 2, 0)), cmpName: "previous 3 months" };
+    return { key, start, end: today, cmpStart, cmpEnd: cut(cmpStart, days(start, today), new Date(y, m - 2, 0)) };
   }
   if (key === "year") {
     const start = new Date(y, 0, 1), cmpStart = new Date(y - 1, 0, 1);
-    return { label: "This year", start, end: today, cmpStart,
-      cmpEnd: cut(cmpStart, days(start, today), new Date(y - 1, 11, 31)), cmpName: "last year" };
+    return { key, start, end: today, cmpStart, cmpEnd: cut(cmpStart, days(start, today), new Date(y - 1, 11, 31)) };
   }
-  return { label: "All time", start: null };
+  return { key: "all", start: null };
 }
 
 function renderDashboard() {
@@ -686,10 +987,8 @@ function renderDashboard() {
   const period = getPeriod();
   const inPeriod = period.start ? inRange(filtered, period.start, period.end) : filtered;
   const total = sumCost(inPeriod);
-  const suffix = " · " + period.label;
 
   // Total cost, with the change against the comparison range
-  document.getElementById("totalLabel").textContent = "Total Cost" + suffix;
   document.getElementById("periodTotal").textContent = fmtBaht(total);
   document.getElementById("allTimeWrap").style.display = period.start ? "block" : "none";
   document.getElementById("allTimeTotal").textContent = fmtBaht(sumCost(filtered));
@@ -698,16 +997,9 @@ function renderDashboard() {
   const cmpTotal = period.start ? sumCost(inRange(filtered, period.cmpStart, period.cmpEnd)) : 0;
   if (cmpTotal > 0) {
     const pct = Math.round((total - cmpTotal) / cmpTotal * 100);
-    if (pct > 0) {
-      delta.textContent = `▲ ${pct}% vs ${period.cmpName}`;
-      delta.style.color = "#dc2626";
-    } else if (pct < 0) {
-      delta.textContent = `▼ ${-pct}% vs ${period.cmpName}`;
-      delta.style.color = "#16a34a";
-    } else {
-      delta.textContent = `0% vs ${period.cmpName}`;
-      delta.style.color = "var(--muted)";
-    }
+    const arrow = pct > 0 ? "▲ " : pct < 0 ? "▼ " : "";
+    delta.textContent = t("cmp." + period.key, { change: `${arrow}${Math.abs(pct)}%` });
+    delta.style.color = pct > 0 ? "#dc2626" : pct < 0 ? "#16a34a" : "var(--muted)";
     delta.style.display = "block";
   } else {
     delta.style.display = "none";
@@ -720,8 +1012,9 @@ function renderDashboard() {
     const thisMonth = ymd(new Date()).slice(0, 7);
     const spent = sumCost(state.sessions.filter(s => s.date.startsWith(thisMonth)));
     const ratio = spent / budget;
-    const rest = ratio > 1 ? `${fmtBaht(spent - budget)} over` : `${fmtBaht(budget - spent)} left`;
-    document.getElementById("budgetText").textContent = `${fmtBaht(spent)} of ${fmtBaht(budget)} · ${rest}`;
+    document.getElementById("budgetText").textContent = t(ratio > 1 ? "budget.over" : "budget.left", {
+      spent: fmtBaht(spent), budget: fmtBaht(budget), rest: fmtBaht(Math.abs(budget - spent))
+    });
     const fill = document.getElementById("budgetFill");
     fill.style.width = Math.min(100, ratio * 100) + "%";
     fill.style.background = ratio > 1 ? "#dc2626" : ratio >= 0.8 ? "#d97706" : "#16a34a";
@@ -731,23 +1024,29 @@ function renderDashboard() {
   }
 
   // Average cost per kWh
-  document.getElementById("avgLabel").textContent = "Avg. Cost / kWh" + suffix;
   document.getElementById("avgCost").textContent = fmtRate(total, sumKwh(inPeriod));
 
-  // Home vs Public: cost and rate for each type, then the difference
-  const byType = t => {
-    const list = inPeriod.filter(s => s.type === t);
+  // Home vs Public: a label on the left and figures on the right, so the
+  // only words to translate are the labels themselves.
+  const byType = type => {
+    const list = inPeriod.filter(s => s.type === type);
     return { cost: sumCost(list), kwh: sumKwh(list) };
   };
   const home = byType("Home"), pub = byType("Public");
-  let typeHtml = [["Home", home], ["Public", pub]].map(([name, v]) =>
-    `<div style="margin-bottom:6px;">${name} <strong>${fmtBaht(v.cost)}</strong><br>
-      <small style="color:var(--muted);">${fmtRate(v.cost, v.kwh)}${v.kwh ? "/kWh" : ""}</small></div>`).join("");
+  const perKwh = v => v.kwh ? t("rate", { amount: fmtRate(v.cost, v.kwh) }) : "—";
+  const typeRow = (label, v) => `<div class="type-row">
+      <span>${label}</span>
+      <span class="type-value"><strong>${fmtBaht(v.cost)}</strong><small>${perKwh(v)}</small></span>
+    </div>`;
+  let typeHtml = typeRow(t("type.home"), home) + typeRow(t("type.public"), pub);
   if (home.kwh && pub.kwh) {
     const diff = pub.cost / pub.kwh - home.cost / home.kwh;
-    typeHtml += `<small style="color:var(--muted);">Public costs ฿${Math.abs(diff).toFixed(2)}/kWh ${diff >= 0 ? "more" : "less"}</small>`;
+    const signed = (diff >= 0 ? "+" : "−") + fmtRate(Math.abs(diff), 1);
+    typeHtml += `<div class="type-row type-diff">
+      <span>${t("dash.publicVsHome")}</span>
+      <span class="type-value"><strong>${t("rate", { amount: signed })}</strong></span>
+    </div>`;
   }
-  document.getElementById("typeLabel").textContent = "Home vs Public" + suffix;
   document.getElementById("typeBreakdown").innerHTML = typeHtml;
 
   // Top five public providers
@@ -756,8 +1055,8 @@ function renderDashboard() {
     byProv[s.provider] = (byProv[s.provider] || 0) + s.cost;
   });
   const provHtml = Object.entries(byProv).sort((a, b) => b[1] - a[1]).slice(0, 5)
-    .map(([p, c]) => `<div>${p}: ${fmtBaht(c)}</div>`).join("") || "<div class='empty'>No public sessions</div>";
-  document.getElementById("providerLabel").textContent = "By Provider (Public)" + suffix;
+    .map(([p, c]) => `<div class="type-row"><span>${p}</span><strong>${fmtBaht(c)}</strong></div>`).join("")
+    || `<div class='empty'>${t("dash.noPublic")}</div>`;
   document.getElementById("providerBreakdown").innerHTML = provHtml;
 
   // Six-month chart, with a budget line when viewing all vehicles
@@ -767,14 +1066,14 @@ function renderDashboard() {
   const months = Array.from({ length: 6 }, (_, k) => new Date(now.getFullYear(), now.getMonth() - (5 - k), 1));
   const vals = months.map(d => sumCost(filtered.filter(s => s.date.startsWith(ymd(d).slice(0, 7)))));
   const maxMonth = Math.max(...vals);
-  const allVehicles = (document.getElementById("vehicleSelect").value || "All vehicles") === "All vehicles";
+  const allVehicles = !document.getElementById("vehicleSelect").value;
   const showLine = !!budget && allVehicles && budget <= 2 * maxMonth;
   const scale = Math.max(maxMonth, showLine ? budget : 0, 1);
   months.forEach((d, k) => {
     const bar = document.createElement("div");
     bar.className = "bar" + (k === 5 ? " current" : "");
     bar.style.height = Math.max(4, (vals[k] / scale) * 100) + "%";
-    bar.innerHTML = `<span>${d.toLocaleString("default", { month: "short" })}</span>`;
+    bar.innerHTML = `<span>${d.toLocaleString(LOCALES[lang], { month: "short" })}</span>`;
     chart.appendChild(bar);
   });
   if (showLine) {
@@ -782,23 +1081,23 @@ function renderDashboard() {
     const line = document.createElement("div");
     line.className = "budget-line";
     line.style.bottom = `calc(24px + (100% - 32px) * ${budget / scale})`;
-    line.innerHTML = "<span>Budget</span>";
+    line.innerHTML = `<span>${t("dash.budgetLine")}</span>`;
     chart.appendChild(line);
   }
 
   const recent = document.getElementById("recentList");
   if (!filtered.length) {
-    recent.innerHTML = "<div class='empty'>No sessions yet</div>";
+    recent.innerHTML = `<div class='empty'>${t("dash.noSessions")}</div>`;
   } else {
     recent.innerHTML = filtered.slice(0, 5).map(s => sessionRow(s)).join("");
   }
 }
 
 function sessionRow(s) {
-  const loc = s.type === "Home" ? "Home" : `${s.provider || ""} \u00b7 ${s.branch || ""}`;
+  const loc = s.type === "Home" ? t("type.home") : `${s.provider || ""} \u00b7 ${s.branch || ""}`;
   return `<div class="session-wrap" data-session-id="${s.id}" style="position:relative; overflow:hidden; margin-bottom:10px;">
     <div class="session-delete" style="position:absolute; inset:0; background:#dc2626; color:white; display:flex; align-items:center; justify-content:flex-end; padding-right:20px; font-weight:600; opacity:0; transition:opacity .15s; border-radius:16px;">
-      Delete
+      ${t("common.delete")}
     </div>
     <div class="card session" style="margin:0; padding:14px 16px; background:var(--card); transition:transform .2s; position:relative; box-shadow:0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);"
          ontouchstart="startSwipe(event, ${s.id})"
@@ -807,10 +1106,10 @@ function sessionRow(s) {
          oncontextmenu="event.preventDefault(); editSession(${s.id})">
       <div>
         <strong>${s.vehicle}</strong><br>
-        <small style="color:var(--muted);">${s.date} \u00b7 ${s.kwh} kWh \u00b7 ${loc}</small>
+        <small style="color:var(--muted);">${s.date} \u00b7 ${t("energy", { amount: s.kwh })} \u00b7 ${loc}</small>
       </div>
       <div style="text-align:right;">
-        <div>${fmtBaht(s.cost)} <span class="badge ${s.type.toLowerCase()}">${s.type}</span></div>
+        <div>${fmtBaht(s.cost)} <span class="badge ${s.type.toLowerCase()}">${typeName(s.type)}</span></div>
       </div>
     </div>
   </div>`;
@@ -884,7 +1183,7 @@ function renderSessions() {
 
   const container = document.getElementById("sessionList");
   if (!list.length) {
-    container.innerHTML = "<div class='empty'>No sessions match the filters</div>";
+    container.innerHTML = `<div class='empty'>${t("sessions.none")}</div>`;
   } else {
     container.innerHTML = list.map(s => sessionRow(s)).join("");
   }
@@ -892,16 +1191,16 @@ function renderSessions() {
   const months = [...new Set(state.sessions.map(s => s.date.slice(0,7)))].sort().reverse();
   const monthSel = document.getElementById("filterMonth");
   const curMonth = monthSel.value;
-  monthSel.innerHTML = `<option value="">All months</option>` + months.map(m => `<option value="${m}" ${m===curMonth?"selected":""}>${m}</option>`).join("");
+  monthSel.innerHTML = `<option value="">${t("filter.allMonths")}</option>` + months.map(m => `<option value="${m}" ${m===curMonth?"selected":""}>${m}</option>`).join("");
 
   const provs = [...new Set(state.sessions.filter(s => s.provider).map(s => s.provider))];
   const provSel = document.getElementById("filterProvider");
   const curProv = provSel.value;
-  provSel.innerHTML = `<option value="">All providers</option>` + provs.map(p => `<option value="${p}" ${p===curProv?"selected":""}>${p}</option>`).join("");
+  provSel.innerHTML = `<option value="">${t("filter.allProviders")}</option>` + provs.map(p => `<option value="${p}" ${p===curProv?"selected":""}>${p}</option>`).join("");
 }
 
 function resetForm() {
-  document.getElementById("formTitle").textContent = "Add Session";
+  document.getElementById("formTitle").textContent = t("session.add");
   document.getElementById("editId").value = "";
   document.getElementById("sessionForm").reset();
   document.getElementById("addDate").valueAsDate = new Date();
@@ -925,11 +1224,11 @@ function togglePublic() {
 function updateBranches() {
   const prov = document.getElementById("addProvider").value;
   const branches = state.providers[prov] || [];
-  document.getElementById("addBranch").innerHTML = branches.map(b => `<option>${b}</option>`).join("") || "<option>No branches yet</option>";
+  document.getElementById("addBranch").innerHTML = branches.map(b => `<option>${b}</option>`).join("") || `<option>${t("chargers.noBranches")}</option>`;
 }
 
 function addBranchOnFly() {
-  const name = prompt("New branch name:");
+  const name = prompt(t("branch.prompt"));
   if (!name) return;
   const prov = document.getElementById("addProvider").value;
   if (!state.providers[prov]) state.providers[prov] = [];
@@ -972,7 +1271,7 @@ function editSession(id) {
   const s = state.sessions.find(x => x.id === id);
   if (!s) return;
   openSessionDialog();
-  document.getElementById("formTitle").textContent = "Edit Session";
+  document.getElementById("formTitle").textContent = t("session.edit");
   document.getElementById("editId").value = s.id;
   document.getElementById("addVehicle").value = s.vehicle;
   document.getElementById("addDate").value = s.date;
@@ -1006,8 +1305,8 @@ function closeDeleteDialog() {
 
 function deleteVehicle(name) {
   showDeleteDialog(
-    "Delete Vehicle",
-    `Delete "${name}"?\n\nExisting sessions will keep the old name.`,
+    t("delete.vehicle.title"),
+    t("delete.vehicle.message", { name }),
     () => {
       state.vehicles = state.vehicles.filter(v => v.name !== name);
       saveState();
@@ -1020,8 +1319,8 @@ function deleteSession(id) {
   const s = state.sessions.find(x => x.id === id);
   if (!s) return;
   showDeleteDialog(
-    "Delete Session",
-    `Delete this session?\n${s.date} \u00b7 ${s.vehicle} \u00b7 ${fmtBaht(s.cost)}`,
+    t("delete.session.title"),
+    t("delete.session.message", { date: s.date, vehicle: s.vehicle, cost: fmtBaht(s.cost) }),
     () => {
       state.sessions = state.sessions.filter(x => x.id !== id);
       saveState();
@@ -1032,7 +1331,7 @@ function deleteSession(id) {
 
 function renderManage() {
   const budgetValue = document.getElementById("budgetSettingValue");
-  if (budgetValue) budgetValue.textContent = state.monthlyBudget ? fmtBaht(state.monthlyBudget) + " / month" : "Not set";
+  if (budgetValue) budgetValue.textContent = state.monthlyBudget ? t("settings.budgetValue", { amount: fmtBaht(state.monthlyBudget) }) : t("settings.notSet");
 
   const grid = document.getElementById("vehicleGrid");
   if (grid) {
@@ -1044,11 +1343,11 @@ function renderManage() {
           <small style="color:#666;">${v.brand || ""} \u00b7 ${v.model || ""} \u00b7 ${v.plate || ""}</small>
         </div>
         <div style="display:flex; gap:6px; flex-shrink:0;">
-          <button class="secondary" onclick="openVehicleDialog('${v.name.replace(/'/g, "\\'")}')" style="padding:6px 12px; font-size:13px; border-radius:999px;">Edit</button>
-          <button class="secondary danger" onclick="deleteVehicle('${v.name.replace(/'/g, "\\'")}')" style="padding:6px 12px; font-size:13px; border-radius:999px;">Delete</button>
+          <button class="secondary" onclick="openVehicleDialog('${v.name.replace(/'/g, "\\'")}')" style="padding:6px 12px; font-size:13px; border-radius:999px;">${t("common.edit")}</button>
+          <button class="secondary danger" onclick="deleteVehicle('${v.name.replace(/'/g, "\\'")}')" style="padding:6px 12px; font-size:13px; border-radius:999px;">${t("common.delete")}</button>
         </div>
       </div>
-    `).join("") || '<div class="empty">No vehicles yet</div>';
+    `).join("") || `<div class="empty">${t("vehicles.none")}</div>`;
   }
 
   const cards = document.getElementById("providerCards");
@@ -1061,7 +1360,7 @@ function renderManage() {
             <div style="width:40px; height:40px; background:#dcfce7; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px;">⚡</div>
             <div style="flex:1;">
               <strong>${name}</strong>
-              <div style="font-size:13px; color:#666;">${branches.length} branch${branches.length !== 1 ? "es" : ""}</div>
+              <div style="font-size:13px; color:#666;">${tCount("chargers.branchCount", branches.length)}</div>
             </div>
             <span style="color:#666;">${open ? "\u25b2" : "\u25bc"}</span>
           </div>
@@ -1071,21 +1370,21 @@ function renderManage() {
                 <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid #eee;">
                   <span>\ud83d\udccd ${b}</span>
                   <div style="display:flex; gap:6px;">
-                    <button class="secondary" onclick="openBranchDialog('${name.replace(/'/g, "\\'")}', '${b.replace(/'/g, "\\'")}')" style="padding:4px 10px; font-size:12px; border-radius:999px;">Edit</button>
-                    <button class="secondary danger" onclick="deleteBranch('${name.replace(/'/g, "\\'")}', '${b.replace(/'/g, "\\'")}')" style="padding:4px 10px; font-size:12px; border-radius:999px;">Delete</button>
+                    <button class="secondary" onclick="openBranchDialog('${name.replace(/'/g, "\\'")}', '${b.replace(/'/g, "\\'")}')" style="padding:4px 10px; font-size:12px; border-radius:999px;">${t("common.edit")}</button>
+                    <button class="secondary danger" onclick="deleteBranch('${name.replace(/'/g, "\\'")}', '${b.replace(/'/g, "\\'")}')" style="padding:4px 10px; font-size:12px; border-radius:999px;">${t("common.delete")}</button>
                   </div>
                 </div>
-              `).join("") || "<div style='color:#888; padding:8px 0;'>No branches yet</div>"}
-              <button class="secondary" onclick="openBranchDialog('${name.replace(/'/g, "\\'")}')" style="margin-top:8px; width:100%; border-radius:999px;">+ Add Branch</button>
+              `).join("") || `<div style='color:#888; padding:8px 0;'>${t("chargers.noBranches")}</div>`}
+              <button class="secondary" onclick="openBranchDialog('${name.replace(/'/g, "\\'")}')" style="margin-top:8px; width:100%; border-radius:999px;">${t("chargers.addBranch")}</button>
             </div>
           ` : ""}
           <div style="padding:0 16px 12px; display:flex; gap:8px; justify-content:flex-end;">
-            <button class="secondary" onclick="openProviderDialog('${name.replace(/'/g, "\\'")}')" style="padding:6px 12px; font-size:13px; border-radius:999px;">Edit</button>
-            <button class="secondary danger" onclick="deleteProvider('${name.replace(/'/g, "\\'")}')" style="padding:6px 12px; font-size:13px; border-radius:999px;">Delete</button>
+            <button class="secondary" onclick="openProviderDialog('${name.replace(/'/g, "\\'")}')" style="padding:6px 12px; font-size:13px; border-radius:999px;">${t("common.edit")}</button>
+            <button class="secondary danger" onclick="deleteProvider('${name.replace(/'/g, "\\'")}')" style="padding:6px 12px; font-size:13px; border-radius:999px;">${t("common.delete")}</button>
           </div>
         </div>
       `;
-    }).join("") || '<div class="empty">No providers yet</div>';
+    }).join("") || `<div class="empty">${t("chargers.none")}</div>`;
   }
 }
 
@@ -1128,11 +1427,11 @@ function openProviderDialog(name = "") {
   const input = document.getElementById("providerDialogName");
   const old = document.getElementById("providerDialogOld");
   if (name) {
-    title.textContent = "Edit Provider";
+    title.textContent = t("provider.edit");
     input.value = name;
     old.value = name;
   } else {
-    title.textContent = "Add Provider";
+    title.textContent = t("provider.add");
     input.value = "";
     old.value = "";
   }
@@ -1150,7 +1449,7 @@ function saveProviderDialog() {
   if (!name) return;
   if (old) {
     if (name !== old && state.providers[name]) {
-      alert("Provider already exists");
+      alert(t("error.providerExists"));
       return;
     }
     if (name !== old) {
@@ -1160,7 +1459,7 @@ function saveProviderDialog() {
     }
   } else {
     if (state.providers[name]) {
-      alert("Provider already exists");
+      alert(t("error.providerExists"));
       return;
     }
     state.providers[name] = [];
@@ -1172,8 +1471,8 @@ function saveProviderDialog() {
 
 function deleteProvider(name) {
   showDeleteDialog(
-    "Delete Provider",
-    `Delete "${name}" and all its branches?`,
+    t("delete.provider.title"),
+    t("delete.provider.message", { name }),
     () => {
       delete state.providers[name];
       saveState();
@@ -1189,7 +1488,7 @@ function openBranchDialog(provider, branch = "") {
   const input = document.getElementById("branchDialogName");
   document.getElementById("branchDialogProvider").value = provider;
   document.getElementById("branchDialogOld").value = branch;
-  title.textContent = branch ? "Edit Branch" : "Add Branch";
+  title.textContent = t(branch ? "branch.edit" : "branch.add");
   input.value = branch;
   dialog.style.display = "flex";
   input.focus();
@@ -1209,7 +1508,7 @@ function saveBranchDialog() {
     const idx = state.providers[provider].indexOf(old);
     if (idx >= 0) {
       if (name !== old && state.providers[provider].includes(name)) {
-        alert("Branch already exists");
+        alert(t("error.branchExists"));
         return;
       }
       state.providers[provider][idx] = name;
@@ -1217,7 +1516,7 @@ function saveBranchDialog() {
     }
   } else {
     if (state.providers[provider].includes(name)) {
-      alert("Branch already exists");
+      alert(t("error.branchExists"));
       return;
     }
     state.providers[provider].push(name);
@@ -1229,8 +1528,8 @@ function saveBranchDialog() {
 
 function deleteBranch(provider, branch) {
   showDeleteDialog(
-    "Delete Branch",
-    `Delete branch "${branch}" from ${provider}?`,
+    t("delete.branch.title"),
+    t("delete.branch.message", { branch, provider }),
     () => {
       state.providers[provider] = (state.providers[provider] || []).filter(b => b !== branch);
       saveState();
@@ -1250,14 +1549,14 @@ function openVehicleDialog(name = "") {
 
   if (name) {
     const v = state.vehicles.find(x => x.name === name);
-    title.textContent = "Edit Vehicle";
+    title.textContent = t("vehicle.edit");
     nameInput.value = v ? v.name : name;
     brandInput.value = v ? (v.brand || "") : "";
     modelInput.value = v ? (v.model || "") : "";
     plateInput.value = v ? (v.plate || "") : "";
     old.value = name;
   } else {
-    title.textContent = "Add Vehicle";
+    title.textContent = t("vehicle.add");
     nameInput.value = "";
     brandInput.value = "";
     modelInput.value = "";
@@ -1282,7 +1581,7 @@ function saveVehicleDialog() {
 
   if (old) {
     if (name !== old && state.vehicles.some(v => v.name === name)) {
-      alert("Vehicle name already exists");
+      alert(t("error.vehicleExists"));
       return;
     }
     const idx = state.vehicles.findIndex(v => v.name === old);
@@ -1292,7 +1591,7 @@ function saveVehicleDialog() {
     state.sessions.forEach(s => { if (s.vehicle === old) s.vehicle = name; });
   } else {
     if (state.vehicles.some(v => v.name === name)) {
-      alert("Vehicle already exists");
+      alert(t("error.vehicleExists"));
       return;
     }
     state.vehicles.push({ name, brand, model, plate });
@@ -1303,6 +1602,7 @@ function saveVehicleDialog() {
 }
 
 loadState();
+applyStaticStrings();
 applyDarkMode();
 checkLogin();
 </script>
