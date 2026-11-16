@@ -1676,21 +1676,26 @@ function pickRowHtml(s) {
   </div>`;
 }
 
-function renderRecentPick() {
-  // The three latest distinct places: a repeated place (for example Home)
-  // is shown once, using its most recent charge.
-  const latest = [];
+// One charge per place, newest first. Home counts as one place; a provider
+// and branch pair counts as one place. The most recent charge is kept.
+function uniquePlaces() {
+  const out = [];
   const seen = new Set();
   for (const s of state.sessions) {
     const key = s.type === "Home" ? "Home" : `${s.provider}|${s.branch || ""}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    latest.push(s);
-    if (latest.length === 3) break;
+    out.push(s);
   }
+  return out;
+}
+
+function renderRecentPick() {
+  const places = uniquePlaces();
+  const latest = places.slice(0, 3);
   document.getElementById("recentBlock").style.display = latest.length ? "block" : "none";
   document.getElementById("recentPick").innerHTML = latest.map(pickRowHtml).join("");
-  document.getElementById("showAllBtn").textContent = t("recent.showAll", { n: state.sessions.length });
+  document.getElementById("showAllBtn").textContent = t("recent.showAll", { n: places.length });
 }
 
 function pickRecent(id) {
@@ -1712,7 +1717,7 @@ function pickRecent(id) {
 }
 
 function openAllPick() {
-  document.getElementById("allPickList").innerHTML = state.sessions.map(pickRowHtml).join("");
+  document.getElementById("allPickList").innerHTML = uniquePlaces().map(pickRowHtml).join("");
   document.getElementById("allPick").classList.add("open");
 }
 
