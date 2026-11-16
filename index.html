@@ -1677,7 +1677,7 @@ function pickRowHtml(s) {
 }
 
 function renderRecentPick() {
-  const latest = state.sessions.slice(0, 5);
+  const latest = state.sessions.slice(0, 3);
   document.getElementById("recentBlock").style.display = latest.length ? "block" : "none";
   document.getElementById("recentPick").innerHTML = latest.map(pickRowHtml).join("");
   document.getElementById("showAllBtn").textContent = t("recent.showAll", { n: state.sessions.length });

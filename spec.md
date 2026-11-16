@@ -239,7 +239,7 @@ Each card shows a chevron (›) on the right to signal that it can be opened. Ca
 
 **Quick add.** The sheet opens with Cost and Energy showing, above a summary of the defaults ("Filled from your last session"). Vehicle, type, provider, branch and date come from the last session, and the date is today.
 
-- Above Cost, the five latest charges are listed as rows showing place, vehicle, date, cost and energy. Tapping a row fills its vehicle, type, provider and branch. Cost and energy are not filled, and the date stays today. The tapped row is highlighted.
+- Above Cost, the three latest charges are listed as rows showing place, vehicle, date, cost and energy. Tapping a row fills its vehicle, type, provider and branch. Cost and energy are not filled, and the date stays today. The tapped row is highlighted.
 - "Show all (N)" opens the full list of charges, newest first, in the same sheet. Tapping a row fills the form and returns to it. "Back" returns without changing anything.
 - Recent charges are not shown when editing.
 - Tapping Cost or Energy opens a keypad inside the sheet, below the fields. The keypad types into the field that was tapped, and the field shows a green border while it is active. Tapping the other field moves the keypad to it. Done closes the keypad.
