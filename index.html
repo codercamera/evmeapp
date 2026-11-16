@@ -1677,7 +1677,17 @@ function pickRowHtml(s) {
 }
 
 function renderRecentPick() {
-  const latest = state.sessions.slice(0, 3);
+  // The three latest distinct places: a repeated place (for example Home)
+  // is shown once, using its most recent charge.
+  const latest = [];
+  const seen = new Set();
+  for (const s of state.sessions) {
+    const key = s.type === "Home" ? "Home" : `${s.provider}|${s.branch || ""}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    latest.push(s);
+    if (latest.length === 3) break;
+  }
   document.getElementById("recentBlock").style.display = latest.length ? "block" : "none";
   document.getElementById("recentPick").innerHTML = latest.map(pickRowHtml).join("");
   document.getElementById("showAllBtn").textContent = t("recent.showAll", { n: state.sessions.length });
