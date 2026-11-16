@@ -15,7 +15,7 @@ EV Charging Expenses lets an electric-vehicle owner log each charging session an
 **In scope**
 
 - Signing in and out.
-- A dashboard of spending figures and a six-month chart.
+- A dashboard of spending figures for a chosen period, a monthly budget and a six-month chart.
 - A filterable list of charging sessions, with add, edit and delete.
 - Management of vehicles, charging providers and provider branches.
 - A light and dark appearance.
@@ -104,8 +104,17 @@ A new user starts with:
 ### 4.6 Persistence
 
 - Vehicles, providers, branches and sessions must persist until the user deletes them.
+- The monthly budget must persist with the user's account.
 - The dark mode choice must persist on the device.
-- The vehicle selection, the session filters and the expanded provider are view state. They reset when the app is reloaded.
+- The vehicle selection, the dashboard period, the session filters and the expanded provider are view state. They reset when the app is reloaded.
+
+### 4.7 User settings
+
+| Field | Type | Rules |
+|---|---|---|
+| `monthlyBudget` | decimal | Optional. THB, greater than zero, at most two decimal places. Empty means no budget is set. |
+
+There is one budget per user. It covers all of the user's vehicles together.
 
 ## 5. Navigation
 
@@ -127,17 +136,53 @@ A new user starts with:
 
 The header shows the app title and a **Log out** button.
 
-A **vehicle selector** offers "All vehicles" plus each of the user's vehicles. The selection filters every figure on the Dashboard and also the Sessions screen. If the selected vehicle is deleted, the selection returns to "All vehicles".
+A **vehicle selector** offers "All vehicles" plus each of the user's vehicles. The selection filters the Dashboard and also the Sessions screen. If the selected vehicle is deleted, the selection returns to "All vehicles".
 
-| Element | Content |
-|---|---|
-| Total Cost This Month | Sum of cost for sessions in the current month. |
-| All-time Total | Sum of cost for all sessions. |
-| Avg. Cost / kWh | Current month's cost divided by current month's energy. Shows `฿0` when the month has no energy. |
-| Home vs Public | All-time cost for each type. |
-| By Provider (Public) | All-time cost per provider for public sessions, highest first, top five only. Shows "No public sessions" when empty. |
-| Monthly Spending | Bar chart of the last six calendar months, ending with the current month, oldest on the left. |
-| Recent Sessions | The five most recent sessions as session cards. Shows "No sessions yet" when empty. |
+A **period selector** sits beside the vehicle selector. It sets the date range for the period figures below. It does not affect the Sessions screen.
+
+| Period | Date range | Compared with |
+|---|---|---|
+| This month (default) | First day of the current month to today. | The same number of days at the start of last month. |
+| Last month | The whole previous calendar month. | The whole month before it. |
+| Last 3 months | The two previous calendar months plus the current month to date. | The three calendar months before that range, cut to the same number of days. |
+| This year | 1 January to today. | The same number of days at the start of last year. |
+| All time | Every session. | No comparison. |
+
+The Dashboard shows these elements, in this order:
+
+| Element | Follows period | Follows vehicle | Content |
+|---|---|---|---|
+| Total Cost | Yes | Yes | Sum of cost in the period, with the change against the comparison range. A second line shows the all-time total, except when the period is All time. |
+| Monthly Budget | No | No | Progress against the budget for the current month. Shown only when a budget is set. |
+| Avg. Cost / kWh | Yes | Yes | Cost in the period divided by energy in the period. Shows `—` when the period has no energy. |
+| Home vs Public | Yes | Yes | For each type: the cost in the period and the average cost per kWh. |
+| By Provider (Public) | Yes | Yes | Cost per provider for public sessions in the period, highest first, top five only. Shows "No public sessions" when empty. |
+| Monthly Spending | No | Yes | Bar chart of the last six calendar months, ending with the current month, oldest on the left. |
+| Recent Sessions | No | Yes | The five most recent sessions as session cards. Shows "No sessions yet" when empty. |
+
+Each period card's label names the selected period, for example "Total Cost · This month".
+
+**Change against the comparison range**
+
+- Shown under the Total Cost figure as an arrow, a percentage and the comparison name, for example `▲ 12% vs last month`.
+- The percentage is the difference between the two totals divided by the comparison total, rounded to a whole number.
+- An increase in spending is shown in the destructive colour with `▲`. A decrease is shown in the accent colour with `▼`. No change shows `0%` in muted text with no arrow.
+- Nothing is shown when the period is All time or when the comparison total is zero.
+
+**Home vs Public**
+
+- Each type shows its cost and its average cost per kWh, for example `Home ฿820 · ฿5.40/kWh`.
+- A type with no energy in the period shows `—` for its rate.
+- When both types have a rate, a third line shows how much more public charging costs per kWh, for example `Public costs ฿2.35/kWh more`. If public is cheaper, the line reads `Public costs ฿0.40/kWh less`.
+
+**Monthly Budget card**
+
+- The card always covers the current calendar month and all vehicles, whatever the period and vehicle selectors show. Its label says so: "Monthly Budget · All vehicles".
+- It shows the amount spent, the budget, and what remains, for example `฿1,240 of ฿2,000 · ฿760 left`.
+- When spending is over the budget, it shows the excess, for example `฿2,240 of ฿2,000 · ฿240 over`.
+- A progress bar shows spending as a share of the budget. It is full when spending reaches or passes the budget.
+- The bar uses the accent colour below 80% of the budget, the warning colour from 80% up to 100%, and the destructive colour above 100%.
+- Tapping the card opens the budget dialog (section 6.6).
 
 **Monthly Spending chart**
 
@@ -145,6 +190,7 @@ A **vehicle selector** offers "All vehicles" plus each of the user's vehicles. T
 - Bar height is proportional to the month with the highest spending. A month with no spending still shows a minimal bar.
 - The current month's bar uses the accent colour. The other bars are neutral.
 - Each bar is labelled with the short month name.
+- When a budget is set and the vehicle selector shows "All vehicles", a horizontal line marks the budget level. The line is hidden when the budget is more than twice the highest month.
 
 ### 6.3 Sessions
 
@@ -171,7 +217,7 @@ Cards have no visible buttons. They respond to:
 | Action | Result |
 |---|---|
 | Swipe left-to-right | The card follows the finger up to 100px and a red "Delete" background fades in. Releasing after more than 80px opens the delete confirmation. A shorter swipe snaps back. |
-| Long press (500ms without moving) | Opens the Edit Session dialog. The device vibrates briefly where supported. |
+| Long press (900ms without moving) | Opens the Edit Session dialog. The device vibrates briefly where supported. |
 | Right-click | Opens the Edit Session dialog. |
 
 ### 6.5 Add / Edit Session dialog
@@ -202,11 +248,19 @@ A bottom sheet covering 75% of the screen height over a dimmed backdrop. The for
 
 ### 6.6 Settings
 
-Three cards:
+Four cards:
 
 - **Dark Mode:** a toggle switch.
+- **Monthly Budget:** shows the current budget, or "Not set". Opens the budget dialog.
 - **Vehicles:** opens the Vehicles screen.
 - **Chargers:** opens the Chargers screen.
+
+**Budget dialog** (centred modal): one amount field in THB, with Cancel and Save.
+
+- Saving an amount greater than zero sets the budget.
+- Saving an empty field removes the budget.
+- Zero, a negative amount or more than two decimal places is rejected with an error message and the dialog stays open.
+- The budget applies to the current month and every later month until it is changed. Changing it does not alter how past months are shown.
 
 ### 6.7 Vehicles
 
@@ -254,13 +308,16 @@ For a session, the message shows its date, vehicle and cost.
 
 - **Current month** means the current calendar month in the user's local time zone.
 - A session belongs to the month of its `date`.
-- All Dashboard figures are calculated from the sessions that match the vehicle selection.
-- Costs are stored exactly as entered. Rounding is for display only.
+- Section 6.2 states which Dashboard elements follow the vehicle selection and which follow the period.
+- A period's date range includes both its first and last day.
+- A comparison range that is cut to "the same number of days" starts on the first day of the earlier period and never runs past that period's last day.
+- Costs are stored exactly as entered. Rounding is for display only. Percentages and differences are calculated from the stored values, not the rounded ones.
 
 | Value | Format | Example |
 |---|---|---|
 | Cost totals and session card cost | `฿` and whole baht, rounded half up | `฿1,240` |
 | Average cost per kWh | `฿` and two decimals | `฿6.85` |
+| Change against comparison | Whole percentage | `12%` |
 | Energy | One decimal, followed by `kWh` | `32.5 kWh` |
 | Date | `YYYY-MM-DD` | `2026-11-14` |
 | Month filter option | `YYYY-MM` | `2026-11` |
@@ -271,7 +328,8 @@ For a session, the message shows its date, vehicle and cost.
 
 - **Layout:** a single column capped at 430px wide and centred.
 - **Accent colour:** green `#16a34a` for primary buttons, key figures, the active tab, the add button and the current-month bar.
-- **Destructive colour:** red `#dc2626` for delete confirmation and the swipe background.
+- **Destructive colour:** red `#dc2626` for delete confirmation, the swipe background, a spending increase and an exceeded budget.
+- **Warning colour:** amber `#d97706` for a budget that is at least 80% used.
 - **Cards:** 16px corner radius with a soft elevated shadow.
 - **Typography:** the system font. Screen titles are 20px bold and key figures are 28px bold.
 - **Form controls:** full width, 12px corner radius, 16px text.
@@ -312,6 +370,11 @@ All user-entered text (names, plates, notes) must be displayed as plain text. It
 | Deleting in-use items | Allowed. Sessions keep the old name. | Blocked while sessions use the item. |
 | Session delete | Swipe only. | Swipe, plus a Delete action in the Edit Session dialog. |
 | Sub-screens | No tab highlighted. | Settings tab stays highlighted. |
+| Dashboard period | No selector. Total and average are for this month; Home vs Public and By Provider are all-time. | A period selector drives all four cards. |
+| Comparison | Not present. | Total Cost shows the change against the previous period. |
+| Home vs Public | Cost only. | Cost and average cost per kWh for each type, plus the difference. |
+| Monthly budget | Not present. | A budget setting, a Dashboard card and a line on the chart. |
+| Empty average | Shows `฿0`. | Shows `—`. |
 | Current month | Calculated in UTC. | Calculated in the user's local time zone. |
 | Chart months | Can skip or repeat a month late in the month. | Each of the six months appears exactly once. |
 | Add new branch | Browser prompt. | In-app input. |
