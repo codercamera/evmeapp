@@ -1,166 +1,206 @@
-# EV Charging Expenses — Specification
+# EV Charging Expenses — Product Specification
 
-This document specifies the app as implemented on branch `test2` (commit `02effc9`). It describes current behaviour, so the code in `index.html` is the reference where the two disagree. Known defects and undecided points are listed in section 10 rather than written into the requirements.
+## 1. About this document
 
-## 1. Overview
+This document is the source of truth for what EV Charging Expenses does. It defines behaviour, data and rules. It does not prescribe a technology stack; that is covered by a separate implementation document.
 
-EV Charging Expenses is a mobile-first web mockup for logging electric-vehicle charging sessions and seeing what they cost. A user records each charge (vehicle, date, cost, energy, home or public charger) and the app summarises spending by month, by charger type and by provider.
+`index.html` in this repository is the **visual reference** for layout, styling and interaction feel. Where the HTML and this document disagree about behaviour, this document wins. Section 11 lists the places where they are known to differ.
+
+The words **must** and **must not** mark requirements.
+
+## 2. Product overview
+
+EV Charging Expenses lets an electric-vehicle owner log each charging session and see what charging costs them. A user records the vehicle, date, cost, energy and where they charged. The app summarises spending by month, by home versus public charging, and by charging provider.
 
 **In scope**
 
-- A demo login gate.
+- Signing in and out.
 - A dashboard of spending figures and a six-month chart.
 - A filterable list of charging sessions, with add, edit and delete.
 - Management of vehicles, charging providers and provider branches.
-- A light/dark appearance toggle.
+- A light and dark appearance.
 
 **Out of scope**
 
-- Real authentication, user accounts or a backend.
-- Saving data between page loads (see section 7).
-- Tablet or desktop layouts.
-- Import, export, sync or multi-currency support.
+- Sharing data between users.
+- Import, export or integration with charging networks.
+- Currencies other than Thai baht.
+- Tablet and desktop layouts beyond the phone-width column.
 
-## 2. Platform and delivery
+## 3. Users and access
 
-| Item | Requirement |
+- A user must sign in with a username and password before seeing any data.
+- Incorrect credentials must be rejected with an error message, and the user stays on the sign-in screen.
+- A signed-in user stays signed in across page reloads until they sign out.
+- Each user sees and changes only their own vehicles, providers, branches and sessions.
+- Signing out returns to the sign-in screen and no user data remains visible.
+
+How accounts are created is defined in the implementation document.
+
+## 4. Data model
+
+Every record has a stable unique `id`. Records refer to each other by `id`, never by name.
+
+### 4.1 Vehicle
+
+| Field | Type | Rules |
+|---|---|---|
+| `name` | text | Required. Unique per user after trimming. The display name. |
+| `brand` | text | Optional. |
+| `model` | text | Optional. |
+| `plate` | text | Optional. License plate. |
+
+### 4.2 Provider
+
+| Field | Type | Rules |
+|---|---|---|
+| `name` | text | Required. Unique per user after trimming. |
+
+A provider owns zero or more branches.
+
+### 4.3 Branch
+
+| Field | Type | Rules |
+|---|---|---|
+| `provider` | reference | Required. The owning provider. |
+| `name` | text | Required. Unique within its provider after trimming. |
+
+### 4.4 Session
+
+| Field | Type | Rules |
+|---|---|---|
+| `vehicle` | reference | Required. |
+| `date` | date | Required. A calendar date with no time of day. |
+| `cost` | decimal | Required. THB, zero or more, at most two decimal places. |
+| `kwh` | decimal | Required. Zero or more, at most one decimal place. |
+| `type` | choice | Required. `Home` or `Public`. |
+| `provider` | reference | Required when `type` is `Public`. Must be empty when `type` is `Home`. |
+| `branch` | reference | Optional when `type` is `Public`. Must belong to `provider`. Must be empty when `type` is `Home`. |
+| `start` | whole number | Optional. Battery percentage at start, 0–100. |
+| `end` | whole number | Optional. Battery percentage at end, 0–100. |
+| `duration` | whole number | Optional. Minutes, zero or more. |
+| `note` | text | Optional. |
+
+### 4.5 Starting data for a new user
+
+A new user starts with:
+
+- No vehicles and no sessions.
+- The default provider list below, which they can edit or delete like any other provider.
+
+| Provider | Branches |
 |---|---|
-| Delivery | One static file, `index.html`, with inline CSS and JavaScript. No build step and no external dependencies. |
-| Hosting | Opens directly from disk or from any static host. |
-| Layout | Single column, capped at 430px wide and centred. Pinch zoom is disabled. |
-| Language | English UI. Currency is Thai baht, shown with the `฿` symbol. |
-| Input | Designed for touch. Mouse support is partial (see section 10). |
+| EV Station PluZ | Bangna, Vibhavadi, Rama 9 |
+| EA Anywhere | Central World, Siam Paragon, Mega Bangna |
+| PEA VOLTA | Bangkok, Chiang Mai, Phuket |
+| EleX by EGAT | EGAT HQ, Lat Krabang |
+| SHARGE | 7-Eleven Sukhumvit, Shell Rama 2 |
+| OneCharge | Cultural Center, Green Bus |
+| iGreen+ | Suvarnabhumi, Ramkhamhaeng |
+| Evolt | Office Park, Mall |
+| Altervim | Lotus, 7-Eleven |
+| Spark | Nakhon Sawan, Highway |
 
-## 3. Data model
+### 4.6 Persistence
 
-All data lives in one in-memory `state` object.
+- Vehicles, providers, branches and sessions must persist until the user deletes them.
+- The dark mode choice must persist on the device.
+- The vehicle selection, the session filters and the expanded provider are view state. They reset when the app is reloaded.
 
-### 3.1 Vehicle
+## 5. Navigation
 
-| Field | Type | Rules |
-|---|---|---|
-| `name` | string | Required. Unique. Acts as the vehicle's identifier. |
-| `brand` | string | Optional. |
-| `model` | string | Optional. |
-| `plate` | string | Optional. |
+- The sign-in screen is shown first unless the user is already signed in.
+- A bottom navigation bar has three tabs: **Dashboard**, **Sessions** and **Settings**. The active tab is highlighted.
+- A floating add button (`+`) sits above the navigation bar on every signed-in screen and opens the Add Session dialog.
+- **Vehicles** and **Chargers** are sub-screens of Settings. Each has a Back button that returns to Settings. The Settings tab stays highlighted while a sub-screen is open.
+- The navigation bar and the add button are hidden on the sign-in screen.
 
-### 3.2 Provider and branch
+## 6. Screens
 
-Providers are stored as a map from provider name to a list of branch names.
-
-- A provider name is unique and acts as its identifier.
-- A branch name is unique within its provider.
-- A provider may have no branches.
-
-### 3.3 Session
-
-| Field | Type | Rules |
-|---|---|---|
-| `id` | number | Timestamp in milliseconds, assigned at creation. |
-| `vehicle` | string | Required. The vehicle's name at the time of saving. |
-| `date` | string | Required. `YYYY-MM-DD`. |
-| `cost` | number | Required. THB, zero or more, up to two decimals. |
-| `kwh` | number | Required. Zero or more, in steps of 0.1. |
-| `type` | string | `Home` or `Public`. |
-| `provider` | string or null | Set only when `type` is `Public`. |
-| `branch` | string or null | Set only when `type` is `Public`. |
-| `start` | number or null | Optional. Battery percentage at start, 0–100. |
-| `end` | number or null | Optional. Battery percentage at end, 0–100. |
-| `duration` | number or null | Optional. Minutes, zero or more. |
-| `note` | string | Optional. Empty string when not given. |
-
-Sessions reference vehicles, providers and branches by name, not by id. The session list is kept sorted by date, newest first.
-
-### 3.4 Seed data
-
-Every page load starts from the same seed:
-
-- **Vehicles:** "Daily Driver" (Tesla Model Y, กท 1234) and "Weekend Tripper" (BYD Atto 3, ขข 5678).
-- **Providers:** ten Thai charging networks, each with two or three branches (EV Station PluZ, EA Anywhere, PEA VOLTA, EleX by EGAT, SHARGE, OneCharge, iGreen+, Evolt, Altervim, Spark).
-- **Sessions:** 18 randomly generated sessions dated within the last 70 days. Each has 15–45 kWh, a rate of ฿4.5–6.5 per kWh for home or ฿6.5–9.5 for public, a duration of 20–70 minutes, and about a 30% chance of the note "Fast charge". Only public sessions get start and end battery percentages.
-
-## 4. Navigation
-
-- **Login screen** is shown first unless the user is already logged in.
-- **Bottom navigation** has three tabs: Dashboard, Sessions and Settings. The active tab is highlighted in green.
-- **Floating add button** (`+`) sits above the navigation on every logged-in screen and opens the Add Session dialog.
-- **Vehicles** and **Chargers** are sub-screens of Settings. Each has a Back button that returns to Settings. No tab is highlighted while a sub-screen is open.
-- The navigation and the add button are hidden on the login screen.
-- Screens are not reflected in the URL. The browser's back button does not move between screens.
-
-## 5. Screens
-
-### 5.1 Login
+### 6.1 Sign in
 
 - Fields: Username and Password.
-- "Fill demo credentials" fills in `demo` / `1234`.
-- "Login" enters the app and opens the Dashboard. Credentials are not checked.
-- The logged-in flag is stored so that a page refresh stays logged in (see section 7).
+- A Login button submits the credentials (see section 3).
+- On success the Dashboard opens.
 
-### 5.2 Dashboard
+### 6.2 Dashboard
 
-The header shows the app title and a "Log out" button. Logging out clears the logged-in flag and returns to the login screen.
+The header shows the app title and a **Log out** button.
 
-A **vehicle selector** offers "All vehicles" plus each vehicle. The selection filters every figure on the Dashboard and also the Sessions screen.
+A **vehicle selector** offers "All vehicles" plus each of the user's vehicles. The selection filters every figure on the Dashboard and also the Sessions screen. If the selected vehicle is deleted, the selection returns to "All vehicles".
 
 | Element | Content |
 |---|---|
-| Total Cost This Month | Sum of cost for sessions dated in the current calendar month, rounded to whole baht. |
-| All-time Total | Sum of cost for all sessions, rounded to whole baht. |
-| Avg. Cost / kWh | Current month's cost divided by current month's energy, to two decimals. Shows `฿0` when the month has no energy. |
-| Home vs Public | All-time cost for each type, rounded to whole baht. |
+| Total Cost This Month | Sum of cost for sessions in the current month. |
+| All-time Total | Sum of cost for all sessions. |
+| Avg. Cost / kWh | Current month's cost divided by current month's energy. Shows `฿0` when the month has no energy. |
+| Home vs Public | All-time cost for each type. |
 | By Provider (Public) | All-time cost per provider for public sessions, highest first, top five only. Shows "No public sessions" when empty. |
-| Monthly Spending | Bar chart of the last six calendar months, oldest on the left. Bar height is proportional to the highest month, with a 4% minimum. The current month is green and the rest are grey. Each bar is labelled with the short month name. |
+| Monthly Spending | Bar chart of the last six calendar months, ending with the current month, oldest on the left. |
 | Recent Sessions | The five most recent sessions as session cards. Shows "No sessions yet" when empty. |
 
-### 5.3 Sessions
+**Monthly Spending chart**
 
-- Three filters, combined with AND: month, type (Home or Public) and provider.
-- The Dashboard's vehicle selection also applies here.
-- Month and provider options are built from all sessions, whatever the vehicle selection.
+- Each of the six months appears exactly once.
+- Bar height is proportional to the month with the highest spending. A month with no spending still shows a minimal bar.
+- The current month's bar uses the accent colour. The other bars are neutral.
+- Each bar is labelled with the short month name.
+
+### 6.3 Sessions
+
+- Sessions are listed as session cards, newest date first. Sessions on the same date are ordered newest-created first.
+- Three filters combine with AND:
+  - **Month:** "All months" plus every month that has at least one session, newest first.
+  - **Type:** "All types", Home, Public.
+  - **Provider:** "All providers" plus every provider used by at least one session.
+- The Dashboard's vehicle selection also applies.
 - Shows "No sessions match the filters" when the result is empty.
 
-### 5.4 Session card
+### 6.4 Session card
 
-Used on both the Dashboard and the Sessions screen. Each session is a separate card with a soft elevated shadow.
+Used on the Dashboard and the Sessions screen. Each session is a separate card.
 
-- **Left:** vehicle name in bold, then `date · kWh · location`. Location is "Home" for home sessions and `provider · branch` for public ones.
-- **Right:** cost rounded to whole baht, and a type badge (green for Home, blue for Public).
-- Battery percentages, duration and note are stored but not shown on the card.
+- **Left:** the vehicle name in bold, then `date · energy kWh · location`.
+  - Location is "Home" for home sessions.
+  - Location is `provider · branch` for public sessions, or the provider alone when no branch is set.
+- **Right:** the cost, and a type badge (green for Home, blue for Public).
+- Battery percentages, duration and note are not shown on the card. They are visible in the Edit Session dialog.
 
-Cards have no visible buttons. They respond to gestures:
+Cards have no visible buttons. They respond to:
 
-| Gesture | Result |
+| Action | Result |
 |---|---|
 | Swipe left-to-right | The card follows the finger up to 100px and a red "Delete" background fades in. Releasing after more than 80px opens the delete confirmation. A shorter swipe snaps back. |
-| Long press (500ms, under 10px of movement) | Opens the Edit Session dialog. The device vibrates briefly where supported. |
-| Right-click or context menu | Opens the Edit Session dialog. |
+| Long press (500ms without moving) | Opens the Edit Session dialog. The device vibrates briefly where supported. |
+| Right-click | Opens the Edit Session dialog. |
 
-### 5.5 Add / Edit Session dialog
+### 6.5 Add / Edit Session dialog
 
-A bottom sheet that covers 75% of the screen height over a dimmed backdrop. The form scrolls inside the sheet. Cancel and Save Session stay fixed side by side at the bottom, and a `✕` button in the header also closes the sheet.
+A bottom sheet covering 75% of the screen height over a dimmed backdrop. The form scrolls inside the sheet. **Cancel** and **Save Session** stay fixed side by side at the bottom. A `✕` button in the header also closes the sheet. Closing without saving discards changes.
 
 | Field | Control | Notes |
 |---|---|---|
-| Vehicle | Select | Required. Lists current vehicles. |
+| Vehicle | Select | Required. Lists the user's vehicles. |
 | Date | Date picker | Required. Defaults to today. |
-| Cost (THB) | Number | Required. Minimum 0, step 0.01. |
-| Energy (kWh) | Number | Required. Minimum 0, step 0.1. |
+| Cost (THB) | Number | Required. |
+| Energy (kWh) | Number | Required. |
 | Type | Select | Home (default) or Public. |
-| Provider | Select | Shown only for Public. |
-| Branch | Select | Shown only for Public. Lists the chosen provider's branches, or "No branches yet". |
-| + Add new branch | Button | Shown only for Public. Asks for a name and adds it to the chosen provider, then selects it. |
-| Start Battery % | Number | Optional. 0–100. |
-| End Battery % | Number | Optional. 0–100. |
-| Duration minutes | Number | Optional. Minimum 0. |
+| Provider | Select | Shown only for Public. Required. |
+| Branch | Select | Shown only for Public. Lists the chosen provider's branches. Shows "No branches yet" when the provider has none. |
+| + Add new branch | Button | Shown only for Public. Asks for a name, adds the branch to the chosen provider and selects it. Section 6.8 naming rules apply. |
+| Start Battery % | Number | Optional. |
+| End Battery % | Number | Optional. |
+| Duration minutes | Number | Optional. |
 | Note | Text area | Optional. |
 
-- In add mode the title is "Add Session" and the form is blank.
-- In edit mode the title is "Edit Session" and the form is filled from the session.
-- Saving validates required fields, adds or replaces the session, re-sorts the list, closes the sheet and refreshes all screens.
-- Changing the type to Home on save clears the provider and branch.
+- **Add mode:** the title is "Add Session" and the form is blank apart from the defaults.
+- **Edit mode:** the title is "Edit Session" and the form is filled from the session. A **Delete** action is available in the sheet and opens the delete confirmation.
+- Saving must validate the fields against section 4.4. Invalid fields are flagged and nothing is saved.
+- After a successful save the sheet closes and every screen reflects the change.
+- Changing the type from Public to Home clears the provider and branch.
+- If the user has no vehicles, the add button must direct them to add a vehicle first.
 
-### 5.6 Settings
+### 6.6 Settings
 
 Three cards:
 
@@ -168,92 +208,114 @@ Three cards:
 - **Vehicles:** opens the Vehicles screen.
 - **Chargers:** opens the Chargers screen.
 
-### 5.7 Vehicles
+### 6.7 Vehicles
 
-- One card per vehicle, in a single column: an icon, the display name, then `brand · model · plate`, with Edit and Delete buttons.
-- "+ Add" in the header opens the vehicle dialog.
+- One card per vehicle in a single column: an icon, the display name, then `brand · model · plate`, with **Edit** and **Delete** buttons. Empty details are left out along with their separators.
+- **+ Add** in the header opens the vehicle dialog.
 - Shows "No vehicles yet" when empty.
 
-**Vehicle dialog** (centred modal) has Display Name, Brand, Model and License Plate.
+**Vehicle dialog** (centred modal): Display Name, Brand, Model, License Plate, with Cancel and Save.
 
-- Display Name is required. Saving with an empty name does nothing.
-- A duplicate name is rejected with an alert.
-- Renaming a vehicle updates the vehicle name on all of its sessions.
+- Display Name is required. A missing or duplicate name is rejected with an error message and the dialog stays open.
+- Renaming a vehicle changes the name shown on all of its sessions.
 
-**Deleting a vehicle** asks for confirmation. Its sessions are kept and continue to show the old name.
+**Deleting a vehicle**
 
-### 5.8 Chargers
+- Requires confirmation.
+- A vehicle with no sessions is deleted outright.
+- A vehicle that has sessions cannot be deleted. The confirmation explains this and tells the user how many sessions use it.
 
-- One card per provider, showing its name and branch count, with Edit and Delete buttons.
+### 6.8 Chargers
+
+- One card per provider, showing its name and branch count, with **Edit** and **Delete** buttons.
 - Tapping a provider expands it to list its branches. Only one provider is expanded at a time.
-- Each branch has Edit and Delete buttons. An expanded provider also has "+ Add Branch".
-- "+ Add" in the header opens the provider dialog.
-- Shows "No providers yet" when empty, and "No branches yet" inside an empty provider.
+- Each branch has **Edit** and **Delete** buttons. An expanded provider also has **+ Add Branch**.
+- **+ Add** in the header opens the provider dialog.
+- Shows "No providers yet" when empty, and "No branches yet" inside a provider with none.
 
-**Provider dialog** and **branch dialog** (centred modals) each have a single name field.
+**Provider dialog** and **branch dialog** (centred modals) each have one name field, with Cancel and Save.
 
-- An empty name does nothing. A duplicate name is rejected with an alert.
-- Renaming a provider or branch updates the matching sessions.
+- A missing or duplicate name is rejected with an error message and the dialog stays open.
+- Renaming a provider or branch changes the name shown on all sessions that use it.
 
-**Deleting a provider** removes it and all its branches after confirmation. **Deleting a branch** removes only that branch. In both cases existing sessions keep the old names.
+**Deleting a provider or branch**
 
-### 5.9 Delete confirmation dialog
+- Requires confirmation.
+- Deleting a provider also deletes its branches.
+- A provider or branch that is used by sessions cannot be deleted. The confirmation explains this and tells the user how many sessions use it.
 
-One shared centred modal is used for sessions, vehicles, providers and branches. It shows a title, a message naming the item, a Cancel button and a red Delete button. Nothing is deleted until Delete is tapped.
+### 6.9 Delete confirmation
 
-## 6. Calculation rules
+One shared centred modal is used for sessions, vehicles, providers and branches. It shows a title, a message identifying the item, a **Cancel** button and a red **Delete** button. Nothing is deleted until Delete is chosen.
 
-- The "current month" is the `YYYY-MM` prefix of the current date in UTC. A session belongs to a month when its date starts with that prefix.
-- All Dashboard figures use the vehicle-filtered session set.
-- Totals are shown rounded to whole baht. Only the average cost per kWh shows two decimals.
-- Stored costs keep their decimals. Rounding is for display only.
+For a session, the message shows its date, vehicle and cost.
 
-## 7. Persistence
+## 7. Calculation and display rules
 
-| Data | Stored | Lifetime |
+- **Current month** means the current calendar month in the user's local time zone.
+- A session belongs to the month of its `date`.
+- All Dashboard figures are calculated from the sessions that match the vehicle selection.
+- Costs are stored exactly as entered. Rounding is for display only.
+
+| Value | Format | Example |
 |---|---|---|
-| Logged-in flag | `localStorage` key `evmeapp-loggedin` = `"1"` | Until logout. |
-| Vehicles, providers, branches, sessions | Memory only | Lost on refresh. The seed data is regenerated, with new random sessions. |
-| Dark mode | Memory only | Always off after a refresh. |
-| Selected vehicle, filters, expanded provider | Memory only | Lost on refresh. |
-
-Data is deliberately not saved. This is a mockup, and each refresh returns it to a clean demo state.
+| Cost totals and session card cost | `฿` and whole baht, rounded half up | `฿1,240` |
+| Average cost per kWh | `฿` and two decimals | `฿6.85` |
+| Energy | One decimal, followed by `kWh` | `32.5 kWh` |
+| Date | `YYYY-MM-DD` | `2026-11-14` |
+| Month filter option | `YYYY-MM` | `2026-11` |
 
 ## 8. Visual design
 
+`index.html` is the reference for the look of every screen. The key rules are:
+
+- **Layout:** a single column capped at 430px wide and centred.
 - **Accent colour:** green `#16a34a` for primary buttons, key figures, the active tab, the add button and the current-month bar.
 - **Destructive colour:** red `#dc2626` for delete confirmation and the swipe background.
-- **Cards:** white (or dark grey in dark mode), 16px radius, soft shadow.
-- **Themes:** light and dark are driven by CSS variables for background, text, card, border, muted text, secondary surface and navigation.
-- **Typography:** the system font stack. Screen titles are 20px bold and key figures are 28px bold.
-- **Form controls:** full width, 12px radius, 16px text to avoid zoom on focus in iOS.
+- **Cards:** 16px corner radius with a soft elevated shadow.
+- **Typography:** the system font. Screen titles are 20px bold and key figures are 28px bold.
+- **Form controls:** full width, 12px corner radius, 16px text.
 
-## 9. Non-functional requirements
+**Themes**
 
-- Works offline once loaded, since there are no network requests.
-- No third-party libraries. The chart is drawn with plain HTML elements.
-- All screens re-render after every data change. This is acceptable at mockup data sizes.
+| Token | Light | Dark |
+|---|---|---|
+| Background | `#f5f7fa` | `#111827` |
+| Text | `#1a1a1a` | `#f3f4f6` |
+| Card | `#ffffff` | `#1f2937` |
+| Border | `#e0e0e0` | `#374151` |
+| Muted text | `#666666` | `#9ca3af` |
+| Secondary surface | `#f0f0f0` | `#374151` |
 
-## 10. Known issues and open questions
+Every surface, including all dialogs and the expanded branch list, must follow the active theme.
 
-These are behaviours in the current code that look unintended or undecided. Each needs a decision before the next round of work.
+## 9. Content safety
 
-**Defects**
+All user-entered text (names, plates, notes) must be displayed as plain text. It must never be interpreted as markup or code.
 
-- **Dark mode is incomplete.** The delete, vehicle, provider and branch dialogs have a hard-coded white background, and the expanded branch list is hard-coded light grey. Text in those areas becomes hard to read in dark mode.
-- **No delete on desktop.** Delete is reachable only by touch swipe. Edit works with right-click, but a mouse user cannot delete a session.
-- **User text is not escaped.** Vehicle, provider and branch names and notes are inserted into the page as HTML. A name containing markup or a double quote can break the layout or the buttons.
-- **Deleted references in edit.** Editing a session whose vehicle, provider or branch has been deleted opens the form without that value selected, so saving changes it to something else.
-- **Month boundaries use UTC.** In Thailand (UTC+7), sessions logged between midnight and 07:00 on the first of a month count towards the previous month's "this month" total.
-- **Chart months can repeat or skip.** The six-month chart steps back from today's day of the month, so on the 29th–31st a shorter month can be skipped and another shown twice.
-- **Optional numbers change type.** Battery percentages and duration are numbers in the seed data but text when entered through the form.
-- **Confirmation message line breaks are lost.** The delete messages contain line breaks that the dialog shows as spaces.
+## 10. Accessibility and input
 
-**Open questions**
+- Every action must be reachable without touch gestures. Edit is reachable by right-click, and delete from the Edit Session dialog.
+- The page must allow the user to zoom.
+- Dialogs must be closable with their Cancel or `✕` control.
 
-- **Should data persist?** An earlier version saved everything to `localStorage`. The current version resets on refresh by design. The right answer depends on whether this stays a demo.
-- **Should login check anything?** Any input, including empty fields, logs in.
-- **Should the optional fields be shown?** Battery percentages, duration and note are collected but never displayed.
-- **Should "Avg. Cost / kWh" be monthly or all-time?** It is monthly today, while the neighbouring "Home vs Public" card is all-time, and neither is labelled.
-- **Should deleting a vehicle or provider touch its sessions?** Today the sessions are kept with the old name, which leaves entries that no longer match anything in Settings.
-- **The README is out of date.** It describes the `main` branch app ("EV Charge Manager", data saved in `localStorage`), not this one.
+## 11. Differences from the visual reference
+
+`index.html` is a mockup. It differs from this specification in the following ways, and this specification takes precedence in each case.
+
+| Area | Visual reference | Specification |
+|---|---|---|
+| Sign in | Accepts anything. Has a "Fill demo credentials" button. | Credentials are checked. No demo button. |
+| Data | Resets to random sample data on every reload. | Persists per user. No sample sessions or vehicles. |
+| Dark mode | Resets on reload. Some dialogs stay light. | Persists. All surfaces are themed. |
+| References | Sessions store vehicle, provider and branch by name. | Records are linked by `id`. |
+| Deleting in-use items | Allowed. Sessions keep the old name. | Blocked while sessions use the item. |
+| Session delete | Swipe only. | Swipe, plus a Delete action in the Edit Session dialog. |
+| Sub-screens | No tab highlighted. | Settings tab stays highlighted. |
+| Current month | Calculated in UTC. | Calculated in the user's local time zone. |
+| Chart months | Can skip or repeat a month late in the month. | Each of the six months appears exactly once. |
+| Add new branch | Browser prompt. | In-app input. |
+| Errors | Browser alerts, or silent. | In-app error messages. |
+| Vehicle details | Shows empty separators. | Empty details are left out. |
+| Number formatting | No thousands separators. | Thousands separators on cost. |
+| Zoom | Disabled. | Allowed. |
