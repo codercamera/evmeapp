@@ -1666,7 +1666,6 @@ document.addEventListener("keydown", e => {
 // "Show all" opens the full list in the same sheet.
 // ---------------------------------------------------------------------------
 let recentSelectedId = null;
-const RECENT_CHARGES_ON = false;
 
 function pickRowHtml(s) {
   const place = s.type === "Home" ? t("type.home") : [s.provider, s.branch].filter(Boolean).join(" \u00b7 ");
@@ -1694,8 +1693,7 @@ function uniquePlaces() {
 function renderRecentPick() {
   const places = uniquePlaces();
   const latest = places.slice(0, 3);
-  // Recent charges are switched off; set to true to show them again.
-  document.getElementById("recentBlock").style.display = RECENT_CHARGES_ON && latest.length ? "block" : "none";
+  document.getElementById("recentBlock").style.display = latest.length ? "block" : "none";
   document.getElementById("recentPick").innerHTML = latest.map(pickRowHtml).join("");
   document.getElementById("showAllBtn").textContent = t("recent.showAll", { n: places.length });
 }
