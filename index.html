@@ -333,18 +333,6 @@
   .photo-view { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 500; align-items: center; justify-content: center; padding: 16px; }
   .photo-view.open { display: flex; }
   .photo-view img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
-  /* Square crop after a photo is chosen */
-  .crop-view { display: none; position: fixed; inset: 0; background: #000; z-index: 600; flex-direction: column; color: #fff; }
-  .crop-view.open { display: flex; }
-  .crop-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; font-size: 15px; }
-  .crop-bar button { background: none; border: none; color: #fff; font-size: 15px; font-weight: 600; padding: 8px; cursor: pointer; }
-  .crop-bar .crop-done { color: #4ade80; }
-  .crop-stage-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 8px; }
-  .crop-stage { position: relative; overflow: hidden; touch-action: none; border: 2px solid #fff; border-radius: 6px; box-shadow: 0 0 0 999px rgba(0,0,0,0.6); background: #111; cursor: move; }
-  .crop-stage img { position: absolute; max-width: none; user-select: none; -webkit-user-drag: none; pointer-events: none; }
-  .crop-zoom { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 360px; font-size: 13px; }
-  .crop-zoom input { flex: 1; }
-  .crop-hint { font-size: 13px; opacity: 0.8; text-align: center; padding: 0 16px 16px; }
   .dialog-error { color: #dc2626; font-size: 13px; margin: -4px 0 12px; display: none; }
 </style>
 </head>
@@ -685,18 +673,6 @@
     <button type="button" class="photo-opt" onclick="closePhotoMenu()" data-i18n="photo.cancel">Cancel</button>
   </div>
 </div>
-<div class="crop-view" id="cropView">
-  <div class="crop-bar">
-    <button type="button" onclick="closeCrop()" data-i18n="crop.cancel">Cancel</button>
-    <b data-i18n="crop.title">Crop photo</b>
-    <button type="button" class="crop-done" onclick="finishCrop()" data-i18n="crop.done">Done</button>
-  </div>
-  <div class="crop-stage-wrap">
-    <div class="crop-stage" id="cropStage"><img id="cropImg" alt=""></div>
-    <div class="crop-zoom"><span data-i18n="crop.zoom">Zoom</span><input type="range" id="cropZoom" min="1" max="4" step="0.01" value="1" oninput="setCropZoom(+this.value)"></div>
-    <div class="crop-hint" data-i18n="crop.hint">Drag and zoom so the charger screen fills the square.</div>
-  </div>
-</div>
 <div class="photo-view" id="photoView" onclick="closePhotoView()"><img id="photoViewImg" alt=""></div>
 <nav id="nav" style="display:none;">
   <button onclick="show('dashboard')" data-screen="dashboard" class="active">
@@ -786,11 +762,6 @@ const STRINGS = {
     "photo.gallery": "Choose from gallery",
     "photo.remove": "Remove photo",
     "photo.cancel": "Cancel",
-    "crop.title": "Crop photo",
-    "crop.done": "Done",
-    "crop.cancel": "Cancel",
-    "crop.zoom": "Zoom",
-    "crop.hint": "Drag and zoom so the charger screen fills the square.",
     "hint.swipe": "Tap a session to edit it. Swipe right to delete, or left to edit.",
     "session.add": "Add Session",
     "session.edit": "Edit Session",
@@ -932,11 +903,6 @@ const STRINGS = {
     "photo.gallery": "เลือกจากคลังรูป",
     "photo.remove": "ลบรูป",
     "photo.cancel": "ยกเลิก",
-    "crop.title": "ครอปรูป",
-    "crop.done": "เสร็จ",
-    "crop.cancel": "ยกเลิก",
-    "crop.zoom": "ซูม",
-    "crop.hint": "ลากและซูมให้หน้าจอเครื่องชาร์จอยู่ในกรอบสี่เหลี่ยม",
     "hint.swipe": "แตะรายการเพื่อแก้ไข ปัดขวาเพื่อลบ หรือปัดซ้ายเพื่อแก้ไข",
     "session.add": "เพิ่มรายการชาร์จ",
     "session.edit": "แก้ไขรายการชาร์จ",
@@ -1851,106 +1817,12 @@ function handlePhoto(input) {
   const file = input.files && input.files[0];
   input.value = "";
   if (!file) return;
-  closePhotoMenu();
-  openCrop(file);
+  shrinkImage(file).then(data => {
+    photoDraft = data;
+    renderPhotoTile();
+    closePhotoMenu();
+  }).catch(() => alert("That file is not a picture."));
 }
-
-// Square crop. The picture can be dragged and zoomed inside a fixed square;
-// Done keeps exactly what is inside the frame, as a 1024px JPEG.
-const CROP_OUT = 1024;
-let crop = { url: null, S: 300, w: 0, h: 0, base: 1, zoom: 1, tx: 0, ty: 0, drag: null };
-
-function openCrop(file) {
-  if (crop.url) URL.revokeObjectURL(crop.url);
-  crop.url = URL.createObjectURL(file);
-  const img = document.getElementById("cropImg");
-  img.onload = () => {
-    crop.w = img.naturalWidth;
-    crop.h = img.naturalHeight;
-    crop.S = Math.min(360, window.innerWidth - 48);
-    const stage = document.getElementById("cropStage");
-    stage.style.width = stage.style.height = crop.S + "px";
-    crop.base = Math.max(crop.S / crop.w, crop.S / crop.h);
-    crop.zoom = 1;
-    document.getElementById("cropZoom").value = 1;
-    crop.tx = (crop.S - crop.w * crop.base) / 2;
-    crop.ty = (crop.S - crop.h * crop.base) / 2;
-    applyCrop();
-  };
-  img.src = crop.url;
-  document.getElementById("cropView").classList.add("open");
-}
-
-function cropScale() { return crop.base * crop.zoom; }
-
-// Keep the picture covering the whole square
-function clampCrop() {
-  const s = cropScale();
-  crop.tx = Math.min(0, Math.max(crop.S - crop.w * s, crop.tx));
-  crop.ty = Math.min(0, Math.max(crop.S - crop.h * s, crop.ty));
-}
-
-function applyCrop() {
-  clampCrop();
-  const s = cropScale();
-  const img = document.getElementById("cropImg");
-  img.style.width = crop.w * s + "px";
-  img.style.height = crop.h * s + "px";
-  img.style.left = crop.tx + "px";
-  img.style.top = crop.ty + "px";
-}
-
-// Zoom around the centre of the square
-function setCropZoom(z) {
-  const s0 = cropScale();
-  const cx = (crop.S / 2 - crop.tx) / s0, cy = (crop.S / 2 - crop.ty) / s0;
-  crop.zoom = z;
-  const s1 = cropScale();
-  crop.tx = crop.S / 2 - cx * s1;
-  crop.ty = crop.S / 2 - cy * s1;
-  applyCrop();
-}
-
-function closeCrop() {
-  document.getElementById("cropView").classList.remove("open");
-  if (crop.url) { URL.revokeObjectURL(crop.url); crop.url = null; }
-  crop.drag = null;
-}
-
-function finishCrop() {
-  const s = cropScale();
-  const size = crop.S / s;
-  const canvas = document.createElement("canvas");
-  canvas.width = canvas.height = CROP_OUT;
-  canvas.getContext("2d").drawImage(document.getElementById("cropImg"),
-    -crop.tx / s, -crop.ty / s, size, size, 0, 0, CROP_OUT, CROP_OUT);
-  photoDraft = canvas.toDataURL("image/jpeg", 0.85);
-  renderPhotoTile();
-  closeCrop();
-}
-
-(function wireCrop() {
-  const stage = document.getElementById("cropStage");
-  stage.addEventListener("pointerdown", e => {
-    stage.setPointerCapture(e.pointerId);
-    crop.drag = { x: e.clientX, y: e.clientY, tx: crop.tx, ty: crop.ty };
-  });
-  stage.addEventListener("pointermove", e => {
-    if (!crop.drag) return;
-    crop.tx = crop.drag.tx + e.clientX - crop.drag.x;
-    crop.ty = crop.drag.ty + e.clientY - crop.drag.y;
-    applyCrop();
-  });
-  const end = () => { crop.drag = null; };
-  stage.addEventListener("pointerup", end);
-  stage.addEventListener("pointercancel", end);
-  stage.addEventListener("wheel", e => {
-    e.preventDefault();
-    const z = Math.min(4, Math.max(1, crop.zoom * (e.deltaY < 0 ? 1.08 : 1 / 1.08)));
-    document.getElementById("cropZoom").value = z;
-    setCropZoom(z);
-  }, { passive: false });
-})();
 
 function viewPhoto(id) {
   const s = state.sessions.find(x => x.id === id);

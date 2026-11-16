@@ -244,7 +244,7 @@ Each card shows a chevron (›) on the right to signal that it can be opened. Ca
 - Recent charges are not shown when editing.
 - Tapping Cost or Energy opens a keypad inside the sheet, below the fields. The keypad types into the field that was tapped, and the field shows a green border while it is active. Tapping the other field moves the keypad to it. Done closes the keypad.
 - The phone's own keyboard is not used for these two fields.
-- Photo: a square photo tile sits beside the Energy field, with no extra row. Tapping it opens Take photo, Choose from gallery and, when a photo exists, Remove photo. A chosen picture opens a crop screen with a square frame. The picture can be dragged and zoomed (slider or scroll wheel) so the charger screen fills the square. Done keeps only what is inside the frame, as a 1024px JPEG. Cancel keeps the previous photo. Once attached, the tile shows the photo; tapping it again changes the photo.
+- Photo: a square photo tile sits beside the Energy field, with no extra row. Tapping it opens Take photo, Choose from gallery and, when a photo exists, Remove photo. The chosen picture is shrunk to at most 1024px and saved as JPEG. Once attached, the tile shows the photo; tapping it again changes the photo.
 - Session rows show a small thumbnail when a session has a photo. Tapping the thumbnail opens the full photo without opening the session. Photos are optional.
 - Place: a row under the recent list shows the chosen place. Tapping it opens "Choose a place".
 - "Choose a place" holds Type, and for Public also Provider, Branch and "+ Add new branch", then "Use this place". Below them are the places used before, one row per place. Tapping a row chooses it and returns to the form at once.
