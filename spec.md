@@ -20,6 +20,7 @@ EV Charging Expenses lets an electric-vehicle owner log each charging session an
 - Management of vehicles, charging providers and provider branches.
 - A light and dark appearance.
 - English and Thai, switchable in the app.
+- Installing the app on a phone's home screen, with offline loading.
 
 **Out of scope**
 
@@ -416,3 +417,33 @@ These keep the app translatable and apply to every language added later.
 Adding a language must require only a new string table and an entry in the language selector.
 
 The Thai wording in `index.html` is a first draft and needs review by a native speaker before release.
+
+## 13. Installable app
+
+The app must be installable on a phone's home screen as a progressive web app. `manifest.webmanifest`, `sw.js` and the `icons` folder in this repository are the reference.
+
+**Installing**
+
+- The app must be served over HTTPS. Installing does not work from a file opened directly.
+- On Android, the browser offers "Install app" or "Add to Home screen".
+- On iPhone and iPad, the user installs from Safari with Share, then "Add to Home Screen".
+- The installed app is named "EV Charging" under its icon and "EV Charging Expenses" in full.
+
+**When installed**
+
+- The app opens in its own window with no browser address bar, in portrait.
+- The phone's status bar matches the app background and follows the light or dark theme.
+- The navigation bar, the add button and the bottom sheets must stay clear of the phone's home indicator and rounded corners.
+
+**Icons**
+
+- A green rounded square with a white lightning bolt.
+- Provided at 192px and 512px, a 512px maskable version with the bolt inside the safe zone, and a 180px version for iPhone.
+
+**Offline**
+
+- After the first visit, the app must open with no connection.
+- When online, the app always loads the latest version. The saved copy is used only when the network is unavailable.
+- All paths must be relative, so the app works whether it is hosted at a domain root or in a sub-folder.
+
+What the user can do offline beyond opening the app depends on how data is stored, which the implementation document defines.
