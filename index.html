@@ -555,9 +555,9 @@
 
 <!-- Delete Confirmation Dialog -->
 <div id="deleteDialog" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; align-items:center; justify-content:center;">
-  <div style="background:white; border-radius:20px; padding:20px; width:90%; max-width:340px; margin:20px;">
+  <div style="background:var(--card); color:var(--text); border-radius:20px; padding:20px; width:90%; max-width:340px; margin:20px;">
     <h2 id="deleteDialogTitle" style="margin-bottom:12px;">Confirm Delete</h2>
-    <p id="deleteDialogMessage" style="margin-bottom:20px; color:#555;"></p>
+    <p id="deleteDialogMessage" style="margin-bottom:20px; color:var(--muted);"></p>
     <div style="display:flex; gap:8px;">
       <button class="secondary" onclick="closeDeleteDialog()" style="flex:1;" data-i18n="common.cancel">Cancel</button>
       <button class="primary" id="deleteDialogConfirm" style="flex:1; margin:0; background:#dc2626;" data-i18n="common.delete">Delete</button>
@@ -567,7 +567,7 @@
 
 <!-- Vehicle Dialog -->
 <div id="vehicleDialog" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; align-items:center; justify-content:center;">
-  <div style="background:white; border-radius:20px; padding:20px; width:90%; max-width:340px; margin:20px; max-height:90vh; overflow-y:auto;">
+  <div style="background:var(--card); color:var(--text); border-radius:20px; padding:20px; width:90%; max-width:340px; margin:20px; max-height:90vh; overflow-y:auto;">
     <h2 id="vehicleDialogTitle" style="margin-bottom:16px;">Add Vehicle</h2>
     <label class="label" data-i18n="vehicle.name">Display Name</label>
     <input id="vehicleDialogName" placeholder="e.g. Daily Driver" data-i18n-placeholder="vehicle.namePlaceholder" style="margin-bottom:12px;">
@@ -596,7 +596,7 @@
 
 <!-- Provider Dialog -->
 <div id="providerDialog" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; align-items:center; justify-content:center;">
-  <div style="background:white; border-radius:20px; padding:20px; width:90%; max-width:340px; margin:20px;">
+  <div style="background:var(--card); color:var(--text); border-radius:20px; padding:20px; width:90%; max-width:340px; margin:20px;">
     <h2 id="providerDialogTitle" style="margin-bottom:16px;">Add Provider</h2>
     <input id="providerDialogName" placeholder="Provider name" data-i18n-placeholder="provider.placeholder" style="margin-bottom:16px;">
     <input type="hidden" id="providerDialogOld">
@@ -609,7 +609,7 @@
 
 <!-- Branch Dialog -->
 <div id="branchDialog" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; align-items:center; justify-content:center;">
-  <div style="background:white; border-radius:20px; padding:20px; width:90%; max-width:340px; margin:20px;">
+  <div style="background:var(--card); color:var(--text); border-radius:20px; padding:20px; width:90%; max-width:340px; margin:20px;">
     <h2 id="branchDialogTitle" style="margin-bottom:16px;">Add Branch</h2>
     <input id="branchDialogName" placeholder="Branch name" data-i18n-placeholder="branch.placeholder" style="margin-bottom:16px;">
     <input type="hidden" id="branchDialogProvider">
@@ -1851,7 +1851,7 @@ function renderManage() {
         <div style="width:48px; height:48px; background:#dcfce7; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">🚗</div>
         <div style="flex:1; min-width:0;">
           <strong style="display:block; font-size:16px;">${v.name}</strong>
-          <small style="color:#666;">${v.brand || ""} \u00b7 ${v.model || ""} \u00b7 ${v.plate || ""}</small>
+          <small style="color:var(--muted);">${v.brand || ""} \u00b7 ${v.model || ""} \u00b7 ${v.plate || ""}</small>
         </div>
         <div style="display:flex; gap:6px; flex-shrink:0;">
           <button class="secondary" onclick="openVehicleDialog('${v.name.replace(/'/g, "\\'")}')" style="padding:6px 12px; font-size:13px; border-radius:999px;">${t("common.edit")}</button>
@@ -1871,9 +1871,9 @@ function renderManage() {
             <div style="width:40px; height:40px; background:#dcfce7; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px;">⚡</div>
             <div style="flex:1;">
               <strong>${name}</strong>
-              <div style="font-size:13px; color:#666;">${tCount("chargers.branchCount", branches.length)}</div>
+              <div style="font-size:13px; color:var(--muted);">${tCount("chargers.branchCount", branches.length)}</div>
             </div>
-            <span style="color:#666;">${open ? "\u25b2" : "\u25bc"}</span>
+            <span style="color:var(--muted);">${open ? "\u25b2" : "\u25bc"}</span>
           </div>
           ${open ? `
             <div style="border-top:1px solid #f0f0f0; padding:8px 16px 16px 56px; background:#fafafa;">
@@ -1885,7 +1885,7 @@ function renderManage() {
                     <button class="secondary danger" onclick="deleteBranch('${name.replace(/'/g, "\\'")}', '${b.replace(/'/g, "\\'")}')" style="padding:4px 10px; font-size:12px; border-radius:999px;">${t("common.delete")}</button>
                   </div>
                 </div>
-              `).join("") || `<div style='color:#888; padding:8px 0;'>${t("chargers.noBranches")}</div>`}
+              `).join("") || `<div style='color:var(--muted); padding:8px 0;'>${t("chargers.noBranches")}</div>`}
               <button class="secondary" onclick="openBranchDialog('${name.replace(/'/g, "\\'")}')" style="margin-top:8px; width:100%; border-radius:999px;">${t("chargers.addBranch")}</button>
             </div>
           ` : ""}
