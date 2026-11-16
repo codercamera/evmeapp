@@ -310,6 +310,9 @@
   .all-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
   .all-head .back-btn { background: none; border: none; color: #16a34a; font-size: 15px; font-weight: 600; cursor: pointer; padding: 6px 0; }
   .all-list { overflow-y: auto; flex: 1; padding-bottom: 16px; }
+  /* Scroll lock while a dialog or sheet is open: the page behind stays put */
+  body.scroll-locked { position: fixed; left: 0; right: 0; overflow: hidden; }
+  #sessionForm, .all-list, .picker-list { overscroll-behavior: contain; }
   .dialog-error { color: #dc2626; font-size: 13px; margin: -4px 0 12px; display: none; }
 </style>
 </head>
@@ -1116,6 +1119,29 @@ function choosePickerOption(index) {
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && pickerTarget) closePicker();
 });
+
+// Lock the page behind any open dialog or sheet, and restore its scroll position on close.
+const OVERLAY_IDS = ["sessionDialog", "budgetDialog", "deleteDialog", "vehicleDialog", "providerDialog", "branchDialog", "pickerOverlay"];
+let lockedScrollY = 0;
+
+function syncScrollLock() {
+  const open = OVERLAY_IDS.some(id => {
+    const el = document.getElementById(id);
+    return el && getComputedStyle(el).display !== "none";
+  });
+  const locked = document.body.classList.contains("scroll-locked");
+  if (open && !locked) {
+    lockedScrollY = window.scrollY;
+    document.body.style.top = -lockedScrollY + "px";
+    document.body.classList.add("scroll-locked");
+  } else if (!open && locked) {
+    document.body.classList.remove("scroll-locked");
+    document.body.style.top = "";
+    window.scrollTo(0, lockedScrollY);
+  }
+}
+
+new MutationObserver(syncScrollLock).observe(document.body, { attributes: true, subtree: true, attributeFilter: ["style", "class"] });
 
 function toggleDarkMode() {
   const on = document.getElementById("darkModeToggle").checked;

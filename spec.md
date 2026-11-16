@@ -391,6 +391,7 @@ All user-entered text (names, plates, notes) must be displayed as plain text. It
 - Every action must be reachable without touch gestures. Edit is reachable by right-click, and delete from the Edit Session dialog.
 - The page must allow the user to zoom.
 - Dialogs must be closable with their Cancel or `✕` control.
+- While any dialog, sheet or selector list is open, the page behind it must not scroll, and it must return to the same place when the dialog closes. Scrolling inside the dialog must not scroll the page.
 
 ## 11. Differences from the visual reference
 
