@@ -106,7 +106,7 @@ A new user starts with:
 
 - Vehicles, providers, branches and sessions must persist until the user deletes them.
 - The monthly budget must persist with the user's account.
-- The dark mode choice and the language choice must persist on the device.
+- The dark mode, language and font size choices must persist on the device.
 - The vehicle selection, the dashboard period, the session filters and the expanded provider are view state. They reset when the app is reloaded.
 
 ### 4.7 User settings
@@ -250,10 +250,11 @@ A bottom sheet covering 75% of the screen height over a dimmed backdrop. The for
 
 ### 6.6 Settings
 
-Five cards:
+Six cards:
 
 - **Dark Mode:** a toggle switch.
 - **Language:** a selector listing each language by its own name ("English", "ไทย"). The change applies immediately, without a reload.
+- **Font Size:** a selector with 90%, 100% (default), 120% and 140%. It scales all text, spacing and controls together. The change applies immediately and is remembered on the device.
 - **Monthly Budget:** shows the current budget, or "Not set". Opens the budget dialog.
 - **Vehicles:** opens the Vehicles screen.
 - **Chargers:** opens the Chargers screen.

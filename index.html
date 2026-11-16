@@ -380,6 +380,18 @@
       <option value="th">ไทย</option>
     </select>
   </div>
+  <div class="card theme-toggle">
+    <div>
+      <strong>🔤 <span data-i18n="settings.fontSize">Font Size</span></strong>
+      <div class="label" data-i18n="settings.fontSizeHint">Scale all text and spacing</div>
+    </div>
+    <select id="fontSizeSelect" onchange="setFontSize(this.value)" style="width:auto; margin:0;">
+      <option value="0.9">90%</option>
+      <option value="1" selected>100%</option>
+      <option value="1.2">120%</option>
+      <option value="1.4">140%</option>
+    </select>
+  </div>
   <div class="card theme-toggle" onclick="openBudgetDialog()" style="cursor:pointer;">
     <div>
       <strong>🎯 <span data-i18n="settings.budget">Monthly Budget</span></strong>
@@ -587,6 +599,8 @@ const STRINGS = {
     "settings.dark": "Dark Mode",
     "settings.darkHint": "Toggle light / dark appearance",
     "settings.language": "Language",
+    "settings.fontSize": "Font Size",
+    "settings.fontSizeHint": "Scale all text and spacing",
     "settings.languageHint": "Text, numbers and month names",
     "settings.budget": "Monthly Budget",
     "settings.budgetHint": "Spending target across all vehicles",
@@ -707,6 +721,8 @@ const STRINGS = {
     "settings.dark": "โหมดมืด",
     "settings.darkHint": "สลับธีมสว่าง / มืด",
     "settings.language": "ภาษา",
+    "settings.fontSize": "ขนาดตัวอักษร",
+    "settings.fontSizeHint": "ปรับขนาดข้อความและระยะห่างทั้งหมด",
     "settings.languageHint": "ข้อความ ตัวเลข และชื่อเดือน",
     "settings.budget": "งบประมาณรายเดือน",
     "settings.budgetHint": "เป้าหมายค่าใช้จ่ายของรถทุกคัน",
@@ -789,6 +805,15 @@ function applyStaticStrings() {
   document.querySelectorAll("[data-i18n-placeholder]").forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
   const sel = document.getElementById("languageSelect");
   if (sel) sel.value = lang;
+}
+
+// Font size scales the whole interface. The chosen factor is kept on the device.
+function setFontSize(value) {
+  const factor = Number(value) || 1;
+  document.body.style.zoom = factor;
+  const sel = document.getElementById("fontSizeSelect");
+  if (sel && sel.value !== String(factor)) sel.value = String(factor);
+  try { localStorage.setItem("evmeapp-font", String(factor)); } catch (e) {}
 }
 
 function setLanguage(code) {
@@ -1736,6 +1761,7 @@ function saveVehicleDialog() {
 loadState();
 enhanceSelects();
 applyStaticStrings();
+setFontSize(localStorage.getItem("evmeapp-font") || 1);
 applyDarkMode();
 checkLogin();
 </script>
