@@ -172,7 +172,7 @@
     min-height: 4px;
   }
   body.dark .bar { background: #374151; }
-  .bar.current { background: #16a34a; }
+  .bar.current, body.dark .bar.current { background: #16a34a; }
   .bar span {
     position: absolute;
     bottom: -20px;
@@ -188,6 +188,13 @@
   .manage-list { max-height: 200px; overflow-y: auto; }
   .manage-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
   .theme-toggle { display: flex; align-items: center; justify-content: space-between; }
+  .chart { position: relative; }
+  .delta { font-size: 13px; font-weight: 600; margin-top: 2px; }
+  .budget-track { height: 8px; background: var(--secondary); border-radius: 999px; overflow: hidden; margin-top: 10px; }
+  .budget-fill { height: 100%; border-radius: 999px; transition: width .3s; }
+  .budget-line { position: absolute; left: 0; right: 0; border-top: 2px dashed #d97706; pointer-events: none; }
+  .budget-line span { position: absolute; right: 0; top: -16px; font-size: 10px; color: #d97706; font-weight: 600; }
+  .dialog-error { color: #dc2626; font-size: 13px; margin: -4px 0 12px; display: none; }
 </style>
 </head>
 <body>
@@ -209,25 +216,42 @@
     <h1>⚡ EV Charging</h1>
     <button class="secondary" onclick="logout()">Log out</button>
   </header>
-  <select class="vehicle-select" id="vehicleSelect" onchange="renderAll()"></select>
+  <div class="row">
+    <select class="vehicle-select" id="vehicleSelect" onchange="renderAll()" style="flex:1; min-width:0;"></select>
+    <select id="periodSelect" onchange="renderDashboard()" style="flex:1; min-width:0;">
+      <option value="month">This month</option>
+      <option value="lastMonth">Last month</option>
+      <option value="3months">Last 3 months</option>
+      <option value="year">This year</option>
+      <option value="all">All time</option>
+    </select>
+  </div>
   <div class="card">
-    <div class="label">Total Cost This Month</div>
-    <div class="kpi" id="monthTotal">฿0</div>
-    <div class="label" style="margin-top:8px;">All-time Total</div>
-    <div id="allTimeTotal" style="font-size:18px; font-weight:600;">฿0</div>
+    <div class="label" id="totalLabel">Total Cost</div>
+    <div class="kpi" id="periodTotal">฿0</div>
+    <div class="delta" id="periodDelta" style="display:none;"></div>
+    <div id="allTimeWrap">
+      <div class="label" style="margin-top:8px;">All-time Total</div>
+      <div id="allTimeTotal" style="font-size:18px; font-weight:600;">฿0</div>
+    </div>
+  </div>
+  <div class="card" id="budgetCard" onclick="openBudgetDialog()" style="display:none; cursor:pointer;">
+    <div class="label">Monthly Budget · All vehicles</div>
+    <div id="budgetText" style="font-size:15px; font-weight:600;"></div>
+    <div class="budget-track"><div class="budget-fill" id="budgetFill"></div></div>
   </div>
   <div class="row">
     <div class="card">
-      <div class="label">Avg. Cost / kWh</div>
+      <div class="label" id="avgLabel">Avg. Cost / kWh</div>
       <div class="kpi" id="avgCost" style="font-size:22px;">฿0</div>
     </div>
     <div class="card">
-      <div class="label">Home vs Public</div>
+      <div class="label" id="typeLabel">Home vs Public</div>
       <div id="typeBreakdown"></div>
     </div>
   </div>
   <div class="card">
-    <div class="label">By Provider (Public)</div>
+    <div class="label" id="providerLabel">By Provider (Public)</div>
     <div id="providerBreakdown"></div>
   </div>
   <div class="card">
@@ -310,6 +334,13 @@
       <span style="position:absolute; height:22px; width:22px; left:3px; bottom:3px; background:white; border-radius:50%; transition:.3s;"></span>
     </label>
   </div>
+  <div class="card theme-toggle" onclick="openBudgetDialog()" style="cursor:pointer;">
+    <div>
+      <strong>🎯 Monthly Budget</strong>
+      <div class="label">Spending target across all vehicles</div>
+    </div>
+    <div id="budgetSettingValue" style="font-weight:600; white-space:nowrap;">Not set</div>
+  </div>
   <div class="card" onclick="show('vehicles')" style="cursor:pointer;">
     <strong>🚗 Vehicles</strong>
     <div class="label">Add, rename, or manage your vehicles</div>
@@ -327,6 +358,21 @@
     <button class="primary" onclick="openVehicleDialog()" style="width:auto; padding:8px 14px; margin:0;">+ Add</button>
   </header>
   <div id="vehicleGrid" style="display:grid; grid-template-columns:1fr; gap:12px;"></div>
+</div>
+
+<!-- Budget Dialog -->
+<div id="budgetDialog" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; align-items:center; justify-content:center;">
+  <div style="background:var(--card); color:var(--text); border-radius:20px; padding:20px; width:90%; max-width:340px; margin:20px;">
+    <h2 style="margin-bottom:16px;">Monthly Budget</h2>
+    <label class="label">Amount (THB)</label>
+    <input id="budgetDialogAmount" type="text" inputmode="decimal" placeholder="e.g. 2000">
+    <div class="dialog-error" id="budgetDialogError">Enter an amount above zero with up to two decimals.</div>
+    <div class="label" style="margin-bottom:16px;">Leave empty to remove the budget.</div>
+    <div style="display:flex; gap:8px;">
+      <button class="secondary" onclick="closeBudgetDialog()" style="flex:1;">Cancel</button>
+      <button class="primary" onclick="saveBudgetDialog()" style="flex:1; margin:0;">Save</button>
+    </div>
+  </div>
 </div>
 
 <!-- Delete Confirmation Dialog -->
@@ -430,7 +476,8 @@ let state = {
     { name: "Weekend Tripper", brand: "BYD", model: "Atto 3", plate: "ขข 5678" }
   ],
   providers: JSON.parse(JSON.stringify(DEFAULT_PROVIDERS)),
-  sessions: []
+  sessions: [],
+  monthlyBudget: 2000
 };
 window.openProvider = null;
 
@@ -579,53 +626,171 @@ function renderVehicleSelect() {
   };
 }
 
+function fmtBaht(n) {
+  return "฿" + Math.round(n).toLocaleString("en-US");
+}
+
+function fmtRate(cost, kwh) {
+  return kwh ? "฿" + (cost / kwh).toFixed(2) : "—";
+}
+
+function ymd(d) {
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
+function sumCost(list) { return list.reduce((a, s) => a + s.cost, 0); }
+function sumKwh(list) { return list.reduce((a, s) => a + s.kwh, 0); }
+
+function inRange(list, start, end) {
+  const a = ymd(start), b = ymd(end);
+  return list.filter(s => s.date >= a && s.date <= b);
+}
+
+// Date range for the selected period, plus the range it is compared with.
+// A period still in progress is compared with the same number of days
+// at the start of the earlier period.
+function getPeriod() {
+  const key = document.getElementById("periodSelect")?.value || "month";
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  const today = new Date(y, m, now.getDate());
+  const days = (a, b) => Math.round((b - a) / 86400000) + 1;
+  const cut = (start, n, last) => {
+    const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + n - 1);
+    return end > last ? last : end;
+  };
+  if (key === "month") {
+    const start = new Date(y, m, 1), cmpStart = new Date(y, m - 1, 1);
+    return { label: "This month", start, end: today, cmpStart,
+      cmpEnd: cut(cmpStart, days(start, today), new Date(y, m, 0)), cmpName: "last month" };
+  }
+  if (key === "lastMonth") {
+    return { label: "Last month", start: new Date(y, m - 1, 1), end: new Date(y, m, 0),
+      cmpStart: new Date(y, m - 2, 1), cmpEnd: new Date(y, m - 1, 0), cmpName: "the month before" };
+  }
+  if (key === "3months") {
+    const start = new Date(y, m - 2, 1), cmpStart = new Date(y, m - 5, 1);
+    return { label: "Last 3 months", start, end: today, cmpStart,
+      cmpEnd: cut(cmpStart, days(start, today), new Date(y, m - 2, 0)), cmpName: "previous 3 months" };
+  }
+  if (key === "year") {
+    const start = new Date(y, 0, 1), cmpStart = new Date(y - 1, 0, 1);
+    return { label: "This year", start, end: today, cmpStart,
+      cmpEnd: cut(cmpStart, days(start, today), new Date(y - 1, 11, 31)), cmpName: "last year" };
+  }
+  return { label: "All time", start: null };
+}
+
 function renderDashboard() {
   const filtered = getFilteredSessions();
-  const month = new Date().toISOString().slice(0, 7);
-  const monthSessions = filtered.filter(s => s.date.startsWith(month));
-  const monthTotal = monthSessions.reduce((a, s) => a + s.cost, 0);
-  const allTotal = filtered.reduce((a, s) => a + s.cost, 0);
-  const monthKwh = monthSessions.reduce((a, s) => a + s.kwh, 0);
-  document.getElementById("monthTotal").textContent = "\u0e3f" + monthTotal.toFixed(0);
-  document.getElementById("allTimeTotal").textContent = "\u0e3f" + allTotal.toFixed(0);
-  document.getElementById("avgCost").textContent = monthKwh ? "\u0e3f" + (monthTotal / monthKwh).toFixed(2) : "\u0e3f0";
+  const period = getPeriod();
+  const inPeriod = period.start ? inRange(filtered, period.start, period.end) : filtered;
+  const total = sumCost(inPeriod);
+  const suffix = " · " + period.label;
 
-  const home = filtered.filter(s => s.type === "Home").reduce((a, s) => a + s.cost, 0);
-  const pub = filtered.filter(s => s.type === "Public").reduce((a, s) => a + s.cost, 0);
-  document.getElementById("typeBreakdown").innerHTML = `Home \u0e3f${home.toFixed(0)}<br>Public \u0e3f${pub.toFixed(0)}`;
+  // Total cost, with the change against the comparison range
+  document.getElementById("totalLabel").textContent = "Total Cost" + suffix;
+  document.getElementById("periodTotal").textContent = fmtBaht(total);
+  document.getElementById("allTimeWrap").style.display = period.start ? "block" : "none";
+  document.getElementById("allTimeTotal").textContent = fmtBaht(sumCost(filtered));
 
+  const delta = document.getElementById("periodDelta");
+  const cmpTotal = period.start ? sumCost(inRange(filtered, period.cmpStart, period.cmpEnd)) : 0;
+  if (cmpTotal > 0) {
+    const pct = Math.round((total - cmpTotal) / cmpTotal * 100);
+    if (pct > 0) {
+      delta.textContent = `▲ ${pct}% vs ${period.cmpName}`;
+      delta.style.color = "#dc2626";
+    } else if (pct < 0) {
+      delta.textContent = `▼ ${-pct}% vs ${period.cmpName}`;
+      delta.style.color = "#16a34a";
+    } else {
+      delta.textContent = `0% vs ${period.cmpName}`;
+      delta.style.color = "var(--muted)";
+    }
+    delta.style.display = "block";
+  } else {
+    delta.style.display = "none";
+  }
+
+  // Monthly budget: always the current month across all vehicles
+  const budget = state.monthlyBudget;
+  const budgetCard = document.getElementById("budgetCard");
+  if (budget) {
+    const thisMonth = ymd(new Date()).slice(0, 7);
+    const spent = sumCost(state.sessions.filter(s => s.date.startsWith(thisMonth)));
+    const ratio = spent / budget;
+    const rest = ratio > 1 ? `${fmtBaht(spent - budget)} over` : `${fmtBaht(budget - spent)} left`;
+    document.getElementById("budgetText").textContent = `${fmtBaht(spent)} of ${fmtBaht(budget)} · ${rest}`;
+    const fill = document.getElementById("budgetFill");
+    fill.style.width = Math.min(100, ratio * 100) + "%";
+    fill.style.background = ratio > 1 ? "#dc2626" : ratio >= 0.8 ? "#d97706" : "#16a34a";
+    budgetCard.style.display = "block";
+  } else {
+    budgetCard.style.display = "none";
+  }
+
+  // Average cost per kWh
+  document.getElementById("avgLabel").textContent = "Avg. Cost / kWh" + suffix;
+  document.getElementById("avgCost").textContent = fmtRate(total, sumKwh(inPeriod));
+
+  // Home vs Public: cost and rate for each type, then the difference
+  const byType = t => {
+    const list = inPeriod.filter(s => s.type === t);
+    return { cost: sumCost(list), kwh: sumKwh(list) };
+  };
+  const home = byType("Home"), pub = byType("Public");
+  let typeHtml = [["Home", home], ["Public", pub]].map(([name, v]) =>
+    `<div style="margin-bottom:6px;">${name} <strong>${fmtBaht(v.cost)}</strong><br>
+      <small style="color:var(--muted);">${fmtRate(v.cost, v.kwh)}${v.kwh ? "/kWh" : ""}</small></div>`).join("");
+  if (home.kwh && pub.kwh) {
+    const diff = pub.cost / pub.kwh - home.cost / home.kwh;
+    typeHtml += `<small style="color:var(--muted);">Public costs ฿${Math.abs(diff).toFixed(2)}/kWh ${diff >= 0 ? "more" : "less"}</small>`;
+  }
+  document.getElementById("typeLabel").textContent = "Home vs Public" + suffix;
+  document.getElementById("typeBreakdown").innerHTML = typeHtml;
+
+  // Top five public providers
   const byProv = {};
-  filtered.filter(s => s.type === "Public" && s.provider).forEach(s => {
+  inPeriod.filter(s => s.type === "Public" && s.provider).forEach(s => {
     byProv[s.provider] = (byProv[s.provider] || 0) + s.cost;
   });
   const provHtml = Object.entries(byProv).sort((a, b) => b[1] - a[1]).slice(0, 5)
-    .map(([p, c]) => `<div>${p}: \u0e3f${c.toFixed(0)}</div>`).join("") || "<div class='empty'>No public sessions</div>";
+    .map(([p, c]) => `<div>${p}: ${fmtBaht(c)}</div>`).join("") || "<div class='empty'>No public sessions</div>";
+  document.getElementById("providerLabel").textContent = "By Provider (Public)" + suffix;
   document.getElementById("providerBreakdown").innerHTML = provHtml;
 
+  // Six-month chart, with a budget line when viewing all vehicles
   const chart = document.getElementById("chart");
   chart.innerHTML = "";
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date();
-    d.setMonth(d.getMonth() - i);
-    const m = d.toISOString().slice(0, 7);
-    const val = filtered.filter(s => s.date.startsWith(m)).reduce((a, s) => a + s.cost, 0);
-    const max = Math.max(...Array.from({length: 6}, (_, j) => {
-      const dd = new Date(); dd.setMonth(dd.getMonth() - j);
-      return filtered.filter(s => s.date.startsWith(dd.toISOString().slice(0,7))).reduce((a,s)=>a+s.cost,0);
-    }), 1);
-    const h = Math.max(4, (val / max) * 100);
+  const now = new Date();
+  const months = Array.from({ length: 6 }, (_, k) => new Date(now.getFullYear(), now.getMonth() - (5 - k), 1));
+  const vals = months.map(d => sumCost(filtered.filter(s => s.date.startsWith(ymd(d).slice(0, 7)))));
+  const maxMonth = Math.max(...vals);
+  const allVehicles = (document.getElementById("vehicleSelect").value || "All vehicles") === "All vehicles";
+  const showLine = !!budget && allVehicles && budget <= 2 * maxMonth;
+  const scale = Math.max(maxMonth, showLine ? budget : 0, 1);
+  months.forEach((d, k) => {
     const bar = document.createElement("div");
-    bar.className = "bar" + (i === 0 ? " current" : "");
-    bar.style.height = h + "%";
-    bar.innerHTML = `<span>${d.toLocaleString("default", {month: "short"})}</span>`;
+    bar.className = "bar" + (k === 5 ? " current" : "");
+    bar.style.height = Math.max(4, (vals[k] / scale) * 100) + "%";
+    bar.innerHTML = `<span>${d.toLocaleString("default", { month: "short" })}</span>`;
     chart.appendChild(bar);
+  });
+  if (showLine) {
+    // The bar area is the chart height minus its 8px top and 24px bottom padding
+    const line = document.createElement("div");
+    line.className = "budget-line";
+    line.style.bottom = `calc(24px + (100% - 32px) * ${budget / scale})`;
+    line.innerHTML = "<span>Budget</span>";
+    chart.appendChild(line);
   }
 
   const recent = document.getElementById("recentList");
   if (!filtered.length) {
     recent.innerHTML = "<div class='empty'>No sessions yet</div>";
   } else {
-    recent.innerHTML = filtered.slice(0, 5).map(s => sessionRow(s, false)).join("");
+    recent.innerHTML = filtered.slice(0, 5).map(s => sessionRow(s)).join("");
   }
 }
 
@@ -645,7 +810,7 @@ function sessionRow(s) {
         <small style="color:var(--muted);">${s.date} \u00b7 ${s.kwh} kWh \u00b7 ${loc}</small>
       </div>
       <div style="text-align:right;">
-        <div>\u0e3f${s.cost.toFixed(0)} <span class="badge ${s.type.toLowerCase()}">${s.type}</span></div>
+        <div>${fmtBaht(s.cost)} <span class="badge ${s.type.toLowerCase()}">${s.type}</span></div>
       </div>
     </div>
   </div>`;
@@ -699,7 +864,7 @@ function startLongPress(e, id) {
       editSession(id);
       if (navigator.vibrate) navigator.vibrate(30);
     }
-  }, 500);
+  }, 900);
 }
 function cancelLongPress() {
   if (longPressTimer) {
@@ -856,7 +1021,7 @@ function deleteSession(id) {
   if (!s) return;
   showDeleteDialog(
     "Delete Session",
-    `Delete this session?\n${s.date} \u00b7 ${s.vehicle} \u00b7 \u0e3f${s.cost.toFixed(0)}`,
+    `Delete this session?\n${s.date} \u00b7 ${s.vehicle} \u00b7 ${fmtBaht(s.cost)}`,
     () => {
       state.sessions = state.sessions.filter(x => x.id !== id);
       saveState();
@@ -866,6 +1031,9 @@ function deleteSession(id) {
 }
 
 function renderManage() {
+  const budgetValue = document.getElementById("budgetSettingValue");
+  if (budgetValue) budgetValue.textContent = state.monthlyBudget ? fmtBaht(state.monthlyBudget) + " / month" : "Not set";
+
   const grid = document.getElementById("vehicleGrid");
   if (grid) {
     grid.innerHTML = state.vehicles.map(v => `
@@ -919,6 +1087,34 @@ function renderManage() {
       `;
     }).join("") || '<div class="empty">No providers yet</div>';
   }
+}
+
+function openBudgetDialog() {
+  const input = document.getElementById("budgetDialogAmount");
+  input.value = state.monthlyBudget || "";
+  document.getElementById("budgetDialogError").style.display = "none";
+  document.getElementById("budgetDialog").style.display = "flex";
+  input.focus();
+}
+
+function closeBudgetDialog() {
+  document.getElementById("budgetDialog").style.display = "none";
+}
+
+function saveBudgetDialog() {
+  const raw = document.getElementById("budgetDialogAmount").value.trim();
+  if (raw === "") {
+    state.monthlyBudget = null;
+  } else {
+    if (!/^\d+(\.\d{1,2})?$/.test(raw) || !(Number(raw) > 0)) {
+      document.getElementById("budgetDialogError").style.display = "block";
+      return;
+    }
+    state.monthlyBudget = Number(raw);
+  }
+  saveState();
+  closeBudgetDialog();
+  renderAll();
 }
 
 function toggleProvider(name) {

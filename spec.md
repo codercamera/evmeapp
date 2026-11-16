@@ -190,7 +190,7 @@ Each period card's label names the selected period, for example "Total Cost · T
 - Bar height is proportional to the month with the highest spending. A month with no spending still shows a minimal bar.
 - The current month's bar uses the accent colour. The other bars are neutral.
 - Each bar is labelled with the short month name.
-- When a budget is set and the vehicle selector shows "All vehicles", a horizontal line marks the budget level. The line is hidden when the budget is more than twice the highest month.
+- When a budget is set and the vehicle selector shows "All vehicles", a horizontal line marks the budget level. The line is hidden when the budget is more than twice the highest month. When the line is shown and the budget is above the highest month, the bars scale to the budget so the line stays inside the chart.
 
 ### 6.3 Sessions
 
@@ -370,15 +370,9 @@ All user-entered text (names, plates, notes) must be displayed as plain text. It
 | Deleting in-use items | Allowed. Sessions keep the old name. | Blocked while sessions use the item. |
 | Session delete | Swipe only. | Swipe, plus a Delete action in the Edit Session dialog. |
 | Sub-screens | No tab highlighted. | Settings tab stays highlighted. |
-| Dashboard period | No selector. Total and average are for this month; Home vs Public and By Provider are all-time. | A period selector drives all four cards. |
-| Comparison | Not present. | Total Cost shows the change against the previous period. |
-| Home vs Public | Cost only. | Cost and average cost per kWh for each type, plus the difference. |
-| Monthly budget | Not present. | A budget setting, a Dashboard card and a line on the chart. |
-| Empty average | Shows `฿0`. | Shows `—`. |
-| Current month | Calculated in UTC. | Calculated in the user's local time zone. |
-| Chart months | Can skip or repeat a month late in the month. | Each of the six months appears exactly once. |
+| Monthly budget | Starts at ฿2,000 and resets on reload. | Starts empty and persists per user. |
+| Home vs Public | Each type's rate is on its own line. | Layout may follow the reference; the content is as in section 6.2. |
 | Add new branch | Browser prompt. | In-app input. |
 | Errors | Browser alerts, or silent. | In-app error messages. |
 | Vehicle details | Shows empty separators. | Empty details are left out. |
-| Number formatting | No thousands separators. | Thousands separators on cost. |
 | Zoom | Disabled. | Allowed. |
