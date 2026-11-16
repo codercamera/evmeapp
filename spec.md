@@ -237,7 +237,17 @@ Each card shows a chevron (›) on the right to signal that it can be opened. Ca
 
 ### 6.5 Add / Edit Session dialog
 
-A bottom sheet covering 75% of the screen height over a dimmed backdrop. The form scrolls inside the sheet. **Cancel** and **Save Session** stay fixed side by side at the bottom. A `✕` button in the header also closes the sheet. Closing without saving discards changes.
+**Quick add.** The sheet opens with Cost and Energy showing, above a summary of the defaults ("Filled from your last session"). Vehicle, type, provider, branch and date come from the last session, and the date is today.
+
+- Tapping Cost or Energy opens a keypad inside the sheet, below the fields. The keypad types into the field that was tapped, and the field shows a green border while it is active. Tapping the other field moves the keypad to it. Done closes the keypad.
+- The phone's own keyboard is not used for these two fields.
+- More reveals the remaining fields and the sheet grows to its full height.
+- Save and Cancel sit directly below the fields, so the sheet has no empty area.
+
+**Edit.** Every field is shown at once, and the sheet is full height. Delete appears at the foot of the form.
+
+
+A bottom sheet over a dimmed backdrop. In quick-add mode it is only as tall as its content. When More is open, or when editing, it covers 75% of the screen height. The form scrolls inside the sheet. **Cancel** and **Save Session** stay fixed side by side at the bottom. A `✕` button in the header also closes the sheet. Closing without saving discards changes.
 
 | Field | Control | Notes |
 |---|---|---|

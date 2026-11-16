@@ -279,15 +279,22 @@
   .amount-field:focus-within { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.2); }
   .kbd-btn { width: 40px; height: 40px; border-radius: 10px; border: none; background: var(--secondary); color: var(--text); font-size: 18px; cursor: pointer; flex-shrink: 0; }
   .more-toggle { background: none; border: none; color: #16a34a; font-size: 14px; font-weight: 600; padding: 8px 0; margin-bottom: 6px; cursor: pointer; }
-  .keypad-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 400; align-items: flex-end; justify-content: center; }
-  .keypad-sheet { background: var(--card); color: var(--text); width: 100%; max-width: 430px; border-radius: 20px 20px 0 0; padding: 14px 16px calc(14px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 24px rgba(0,0,0,0.15); }
+  .inline-pad { display: none; margin: -2px 0 12px; padding: 10px; border-radius: 14px; background: var(--secondary); }
+  .inline-pad.open { display: block; }
+  .amount-field.active { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.2); }
+  #sessionSheet.quick { height: auto !important; max-height: 75vh; }
+  #sessionSheet.quick #sessionForm { flex: 1 1 auto !important; min-height: 0; overflow-y: auto; }
+  .inline-pad .keypad-label { display: none; }
+  .inline-pad .keypad-value { font-size: 26px; margin: 0 0 8px; }
+  .inline-pad .keypad-grid button { height: 42px; font-size: 19px; }
+  .inline-pad .keypad-done { height: 44px; margin-top: 8px; }
   .keypad-label { font-size: 12px; color: var(--muted); }
   .keypad-value { font-size: 30px; font-weight: 700; margin: 2px 0 12px; text-align: right; }
   .keypad-value small { font-size: 14px; color: var(--muted); margin-left: 6px; font-weight: 500; }
   .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .keypad-grid button { height: 56px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); color: var(--text); font-size: 22px; font-weight: 600; cursor: pointer; }
+  .keypad-grid button { height: 50px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); color: var(--text); font-size: 22px; font-weight: 600; cursor: pointer; }
   .keypad-grid button:active { background: var(--secondary); }
-  .keypad-done { width: 100%; height: 50px; margin-top: 10px; border: none; border-radius: 12px; background: #16a34a; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; }
+  .keypad-done { width: 100%; height: 46px; margin-top: 10px; border: none; border-radius: 12px; background: #16a34a; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; }
   .dialog-error { color: #dc2626; font-size: 13px; margin: -4px 0 12px; display: none; }
 </style>
 </head>
@@ -376,7 +383,7 @@
 
 <!-- Session Dialog (mobile-first bottom sheet style) -->
 <div id="sessionDialog" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:200; align-items:flex-end; justify-content:center;">
-  <div style="background:var(--card); color:var(--text); border-radius:20px 20px 0 0; width:100%; max-width:430px; height:75vh; margin:0; display:flex; flex-direction:column; box-shadow:0 -4px 24px rgba(0,0,0,0.15);">
+  <div id="sessionSheet" style="background:var(--card); color:var(--text); border-radius:20px 20px 0 0; width:100%; max-width:430px; height:75vh; margin:0; display:flex; flex-direction:column; box-shadow:0 -4px 24px rgba(0,0,0,0.15);">
     <div style="display:flex; justify-content:space-between; align-items:center; padding:20px 20px 0;">
       <h2 id="formTitle" style="margin:0;">Add Session</h2>
       <button class="secondary" onclick="closeSessionDialog()" style="width:auto; padding:6px 12px; border-radius:999px;">✕</button>
@@ -396,6 +403,17 @@
       <div class="amount-field">
         <input id="addKwh" type="text" inputmode="decimal" readonly required placeholder="0.0" data-label-key="field.energy" data-unit="kWh" onclick="openKeypad(this, 1)">
         <button type="button" class="kbd-btn" onclick="openKeypad(document.getElementById('addKwh'), 1)" aria-label="Keypad">⌨</button>
+      </div>
+      <div class="inline-pad" id="keypadPad">
+        <div class="keypad-label" id="keypadLabel"></div>
+        <div class="keypad-value" id="keypadValue"></div>
+        <div class="keypad-grid">
+          <button type="button" onclick="keypadKey('1')">1</button><button type="button" onclick="keypadKey('2')">2</button><button type="button" onclick="keypadKey('3')">3</button>
+          <button type="button" onclick="keypadKey('4')">4</button><button type="button" onclick="keypadKey('5')">5</button><button type="button" onclick="keypadKey('6')">6</button>
+          <button type="button" onclick="keypadKey('7')">7</button><button type="button" onclick="keypadKey('8')">8</button><button type="button" onclick="keypadKey('9')">9</button>
+          <button type="button" onclick="keypadKey('.')">.</button><button type="button" onclick="keypadKey('0')">0</button><button type="button" onclick="keypadKey('⌫')" aria-label="Delete">⌫</button>
+        </div>
+        <button type="button" class="keypad-done" onclick="closeKeypad()" data-i18n="keypad.done">Done</button>
       </div>
       <button type="button" class="more-toggle" id="moreToggle" onclick="toggleMore()"></button>
       <div id="advanced" style="display:none;">
@@ -583,21 +601,6 @@
     <div class="picker-handle"></div>
     <div class="picker-title" id="pickerTitle"></div>
     <div class="picker-list" id="pickerList"></div>
-  </div>
-</div>
-
-<!-- Keypad for amount fields -->
-<div class="keypad-overlay" id="keypadOverlay" onclick="if (event.target === this) closeKeypad()">
-  <div class="keypad-sheet">
-    <div class="keypad-label" id="keypadLabel"></div>
-    <div class="keypad-value" id="keypadValue"></div>
-    <div class="keypad-grid">
-      <button type="button" onclick="keypadKey('1')">1</button><button type="button" onclick="keypadKey('2')">2</button><button type="button" onclick="keypadKey('3')">3</button>
-      <button type="button" onclick="keypadKey('4')">4</button><button type="button" onclick="keypadKey('5')">5</button><button type="button" onclick="keypadKey('6')">6</button>
-      <button type="button" onclick="keypadKey('7')">7</button><button type="button" onclick="keypadKey('8')">8</button><button type="button" onclick="keypadKey('9')">9</button>
-      <button type="button" onclick="keypadKey('.')">.</button><button type="button" onclick="keypadKey('0')">0</button><button type="button" onclick="keypadKey('⌫')" aria-label="Delete">⌫</button>
-    </div>
-    <button type="button" class="keypad-done" onclick="closeKeypad()" data-i18n="keypad.done">Done</button>
   </div>
 </div>
 
@@ -1149,6 +1152,7 @@ function openSessionDialog() {
 }
 
 function closeSessionDialog() {
+  closeKeypad();
   document.getElementById("sessionDialog").style.display = "none";
 }
 
@@ -1518,6 +1522,7 @@ function addBranchOnFly() {
 
 function saveSession(e) {
   e.preventDefault();
+  closeKeypad();
   const id = document.getElementById("editId").value;
   const session = {
     id: id ? +id : Date.now(),
@@ -1578,13 +1583,16 @@ let keypadField = null, keypadMaxDecimals = 2;
 function openKeypad(input, maxDecimals) {
   keypadField = input;
   keypadMaxDecimals = maxDecimals;
+  document.querySelectorAll(".amount-field").forEach(f => f.classList.remove("active"));
+  input.parentElement.classList.add("active");
+  document.getElementById("keypadPad").classList.add("open");
   updateKeypadDisplay();
-  document.getElementById("keypadOverlay").style.display = "flex";
 }
 
 function closeKeypad() {
-  document.getElementById("keypadOverlay").style.display = "none";
   keypadField = null;
+  document.getElementById("keypadPad").classList.remove("open");
+  document.querySelectorAll(".amount-field").forEach(f => f.classList.remove("active"));
 }
 
 function updateKeypadDisplay() {
@@ -1621,6 +1629,7 @@ document.addEventListener("keydown", e => {
 function setAdvanced(open) {
   const editing = !!document.getElementById("editId").value;
   document.getElementById("advanced").style.display = open ? "block" : "none";
+  document.getElementById("sessionSheet").classList.toggle("quick", !open && !editing);
   const btn = document.getElementById("moreToggle");
   btn.style.display = editing ? "none" : "block";
   btn.textContent = t(open ? "quick.less" : "quick.more") + (open ? " \u25b4" : " \u25be");
