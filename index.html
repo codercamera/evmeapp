@@ -347,6 +347,11 @@
   .crop-sizes button { min-width: 56px; padding: 8px 16px; border: none; border-radius: 99px; background: #1f1f1f; color: #ddd; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
   .crop-sizes button.on { background: #fff; color: #000; }
   .crop-hint { text-align: center; font-size: 13px; color: #bbb; padding: 4px 16px 22px; }
+  /* Recent places: three tiles, place name only */
+  .recent-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+  .recent-tile { border: 1px solid var(--border); border-radius: 14px; padding: 10px; min-height: 52px; display: flex; align-items: center; background: var(--card); color: var(--text); font: inherit; font-size: 13px; font-weight: 600; line-height: 1.25; text-align: left; cursor: pointer; overflow: hidden; }
+  .recent-tile > span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .recent-tile.on { border-color: #16a34a; background: rgba(22,163,74,0.12); box-shadow: 0 0 0 3px rgba(22,163,74,0.2); }
   .dialog-error { color: #dc2626; font-size: 13px; margin: -4px 0 12px; display: none; }
 </style>
 </head>
@@ -466,7 +471,7 @@
       <input type="hidden" id="editId">
       <div id="recentBlock" style="display:none;">
         <div class="sec-head"><span data-i18n="recent.title">Recent charges</span><a id="showAllBtn" onclick="openAllPick()"></a></div>
-        <div id="recentPick"></div>
+        <div id="recentPick" class="recent-grid"></div>
       </div>
       <div class="defaults-note" id="quickDefaults" style="display:none;">
         <div class="defaults-title" data-i18n="quick.filled">Filled from your last session</div>
@@ -1985,11 +1990,21 @@ function uniquePlaces() {
   return out;
 }
 
+// Recent places are shown as tiles with the place name only.
+function placeName(s) {
+  return s.type === "Home" ? t("type.home") : [s.provider, s.branch].filter(Boolean).join(" \u00b7 ");
+}
+
+function recentTileHtml(s) {
+  const on = s.id === recentSelectedId ? " on" : "";
+  return `<button type="button" class="recent-tile${on}" onclick="pickRecent(${s.id})"><span>${placeName(s)}</span></button>`;
+}
+
 function renderRecentPick() {
   const places = uniquePlaces();
   const latest = places.slice(0, 3);
   document.getElementById("recentBlock").style.display = latest.length ? "block" : "none";
-  document.getElementById("recentPick").innerHTML = latest.map(pickRowHtml).join("");
+  document.getElementById("recentPick").innerHTML = latest.map(recentTileHtml).join("");
   document.getElementById("showAllBtn").textContent = t("recent.showAll", { n: places.length });
 }
 
