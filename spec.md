@@ -219,9 +219,13 @@ Cards have no visible buttons. They respond to:
 
 | Action | Result |
 |---|---|
-| Swipe left-to-right | The card follows the finger up to 100px and a red "Delete" background fades in. Releasing after more than 80px opens the delete confirmation. A shorter swipe snaps back. |
-| Long press (900ms without moving) | Opens the Edit Session dialog. The device vibrates briefly where supported. |
-| Right-click | Opens the Edit Session dialog. |
+| Swipe left-to-right | The card follows the finger up to 100px and a red "Delete" background appears on the left. Releasing after 80px or more opens the delete confirmation. A shorter swipe snaps back. |
+| Swipe right-to-left | The card follows the finger up to 100px and a green "Edit" background appears on the right. Releasing after 80px or more opens the Edit Session dialog. A shorter swipe snaps back. |
+| Right-click | Opens the Edit Session dialog. This is the route for mouse users. |
+
+- A touch that begins by moving vertically scrolls the list and must not move the card.
+- A touch that begins by moving horizontally moves the card and must not scroll the list.
+- Long press does nothing.
 
 ### 6.5 Add / Edit Session dialog
 

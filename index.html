@@ -246,6 +246,19 @@
   .picker-option:hover, .picker-option:focus-visible { background: var(--secondary); outline: none; }
   .picker-option.selected { color: #16a34a; font-weight: 600; }
   .picker-option.selected::after { content: "\2713"; font-size: 18px; }
+  /* Session cards: swipe right for Delete, swipe left for Edit */
+  .session-wrap { position: relative; overflow: hidden; margin-bottom: 10px; border-radius: 16px; }
+  .session-wrap .card.session {
+    position: relative; margin: 0; padding: 14px 16px; background: var(--card); border-bottom: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    transition: transform .2s; touch-action: pan-y; user-select: none; -webkit-user-select: none;
+  }
+  .session-action {
+    position: absolute; inset: 0; display: flex; align-items: center; padding: 0 20px;
+    color: white; font-weight: 600; opacity: 0; transition: opacity .15s; border-radius: 16px;
+  }
+  .session-action.delete { background: #dc2626; justify-content: flex-start; }
+  .session-action.edit { background: #16a34a; justify-content: flex-end; }
   .dialog-error { color: #dc2626; font-size: 13px; margin: -4px 0 12px; display: none; }
 </style>
 </head>
@@ -1268,19 +1281,19 @@ function renderDashboard() {
 }
 
 function sessionRow(s) {
-  const loc = s.type === "Home" ? t("type.home") : `${s.provider || ""} \u00b7 ${s.branch || ""}`;
-  return `<div class="session-wrap" data-session-id="${s.id}" style="position:relative; overflow:hidden; margin-bottom:10px;">
-    <div class="session-delete" style="position:absolute; inset:0; background:#dc2626; color:white; display:flex; align-items:center; justify-content:flex-end; padding-right:20px; font-weight:600; opacity:0; transition:opacity .15s; border-radius:16px;">
-      ${t("common.delete")}
-    </div>
-    <div class="card session" style="margin:0; padding:14px 16px; background:var(--card); transition:transform .2s; position:relative; box-shadow:0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);"
+  const loc = s.type === "Home" ? t("type.home") : `${s.provider || ""} · ${s.branch || ""}`;
+  return `<div class="session-wrap" data-session-id="${s.id}">
+    <div class="session-action delete">${t("common.delete")}</div>
+    <div class="session-action edit">${t("common.edit")}</div>
+    <div class="card session"
          ontouchstart="startSwipe(event, ${s.id})"
          ontouchmove="moveSwipe(event, ${s.id})"
          ontouchend="endSwipe(event, ${s.id})"
+         ontouchcancel="resetSwipe(event.currentTarget)"
          oncontextmenu="event.preventDefault(); editSession(${s.id})">
       <div>
         <strong>${s.vehicle}</strong><br>
-        <small style="color:var(--muted);">${s.date} \u00b7 ${t("energy", { amount: s.kwh })} \u00b7 ${loc}</small>
+        <small style="color:var(--muted);">${s.date} · ${t("energy", { amount: s.kwh })} · ${loc}</small>
       </div>
       <div style="text-align:right;">
         <div>${fmtMoney(s.cost)} <span class="badge ${s.type.toLowerCase()}">${typeName(s.type)}</span></div>
@@ -1289,61 +1302,53 @@ function sessionRow(s) {
   </div>`;
 }
 
-let swipeState = { id: null, startX: 0, currentX: 0, swiping: false };
+// Swipe gestures on a session card:
+//   left to right  -> reveals Delete on the left, opens the delete confirmation
+//   right to left  -> reveals Edit on the right, opens the edit sheet
+// A swipe counts once the card has moved past SWIPE_TRIGGER. A touch that
+// starts out vertical is treated as scrolling and ignored.
+const SWIPE_MAX = 100, SWIPE_TRIGGER = 80, SWIPE_SLOP = 10;
+let swipeState = { id: null, startX: 0, startY: 0, dx: 0, mode: null };
 
 function startSwipe(e, id) {
-  const t = e.touches[0];
-  swipeState = { id, startX: t.clientX, currentX: t.clientX, swiping: true };
-  startLongPress(e, id);
+  const touch = e.touches[0];
+  swipeState = { id, startX: touch.clientX, startY: touch.clientY, dx: 0, mode: null };
+  e.currentTarget.style.transition = "none";
 }
 
 function moveSwipe(e, id) {
-  if (!swipeState.swiping || swipeState.id !== id) return;
-  const t = e.touches[0];
-  const dx = t.clientX - swipeState.startX;
-  swipeState.currentX = t.clientX;
-  if (Math.abs(dx) > 10) cancelLongPress();
-  const row = e.currentTarget;
-  const del = row.parentElement.querySelector(".session-delete");
-  if (dx > 0) {
-    const offset = Math.min(dx, 100);
-    row.style.transform = `translateX(${offset}px)`;
-    del.style.opacity = Math.min(1, offset / 80);
+  if (swipeState.id !== id || swipeState.mode === "scroll") return;
+  const touch = e.touches[0];
+  const dx = touch.clientX - swipeState.startX;
+  const dy = touch.clientY - swipeState.startY;
+  if (!swipeState.mode) {
+    if (Math.abs(dx) < SWIPE_SLOP && Math.abs(dy) < SWIPE_SLOP) return;
+    swipeState.mode = Math.abs(dx) > Math.abs(dy) ? "swipe" : "scroll";
+    if (swipeState.mode === "scroll") return;
   }
+  if (e.cancelable) e.preventDefault();
+  const offset = Math.max(-SWIPE_MAX, Math.min(SWIPE_MAX, dx));
+  swipeState.dx = offset;
+  const row = e.currentTarget;
+  const wrap = row.parentElement;
+  row.style.transform = `translateX(${offset}px)`;
+  wrap.querySelector(".session-action.delete").style.opacity = offset > 0 ? Math.min(1, offset / SWIPE_TRIGGER) : 0;
+  wrap.querySelector(".session-action.edit").style.opacity = offset < 0 ? Math.min(1, -offset / SWIPE_TRIGGER) : 0;
 }
 
 function endSwipe(e, id) {
-  if (!swipeState.swiping || swipeState.id !== id) return;
-  const dx = swipeState.currentX - swipeState.startX;
-  const row = e.currentTarget;
-  const del = row.parentElement.querySelector(".session-delete");
-  swipeState.swiping = false;
-  if (dx > 80) {
-    row.style.transform = "translateX(0)";
-    del.style.opacity = "0";
-    deleteSession(id);
-  } else {
-    row.style.transform = "translateX(0)";
-    del.style.opacity = "0";
-  }
+  if (swipeState.id !== id) return;
+  const dx = swipeState.mode === "swipe" ? swipeState.dx : 0;
+  resetSwipe(e.currentTarget);
+  if (dx >= SWIPE_TRIGGER) deleteSession(id);
+  else if (dx <= -SWIPE_TRIGGER) editSession(id);
 }
 
-let longPressTimer = null;
-function startLongPress(e, id) {
-  cancelLongPress();
-  longPressTimer = setTimeout(() => {
-    if (Math.abs(swipeState.currentX - swipeState.startX) < 10) {
-      e.preventDefault();
-      editSession(id);
-      if (navigator.vibrate) navigator.vibrate(30);
-    }
-  }, 900);
-}
-function cancelLongPress() {
-  if (longPressTimer) {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-  }
+function resetSwipe(row) {
+  swipeState = { id: null, startX: 0, startY: 0, dx: 0, mode: null };
+  row.style.transition = "";
+  row.style.transform = "";
+  row.parentElement.querySelectorAll(".session-action").forEach(el => { el.style.opacity = 0; });
 }
 
 function renderSessions() {
