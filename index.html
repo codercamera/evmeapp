@@ -183,7 +183,7 @@
     white-space: nowrap;
   }
   .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-  .filters select { flex: 1; min-width: 100px; margin-bottom: 0; }
+  .filters .picker { flex: 1; min-width: 100px; margin-bottom: 0; }
   .empty { text-align: center; color: var(--muted); padding: 40px 0; }
   .manage-list { max-height: 200px; overflow-y: auto; }
   .manage-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
@@ -199,6 +199,37 @@
   .type-value small { display: block; color: var(--muted); }
   .type-diff { margin: 8px 0 0; padding-top: 8px; border-top: 1px solid var(--border); font-size: 13px; color: var(--muted); }
   .type-diff strong { color: var(--text); }
+  /* Custom selector: replaces the browser's own select control */
+  .picker { position: relative; width: 100%; margin-bottom: 12px; }
+  .picker select { position: absolute; inset: 0; height: 100%; margin: 0; opacity: 0; pointer-events: none; }
+  .picker-btn {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px;
+    background: var(--card); color: var(--text); font: inherit; font-size: 16px; text-align: left; cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .picker-btn:hover { border-color: #16a34a; }
+  .picker-btn:focus-visible, .picker-btn.open { outline: none; border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.2); }
+  .picker-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .picker-btn svg { flex-shrink: 0; width: 18px; height: 18px; color: var(--muted); transition: transform .2s; }
+  .picker-btn.open svg { transform: rotate(180deg); color: #16a34a; }
+  .picker-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 300; align-items: flex-end; justify-content: center; }
+  .picker-sheet {
+    background: var(--card); color: var(--text); width: 100%; max-width: 430px; max-height: 60vh;
+    border-radius: 20px 20px 0 0; display: flex; flex-direction: column; box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
+    padding-bottom: 12px;
+  }
+  .picker-handle { width: 40px; height: 4px; border-radius: 999px; background: var(--border); margin: 10px auto 4px; }
+  .picker-title { font-size: 13px; color: var(--muted); padding: 8px 20px 4px; }
+  .picker-list { overflow-y: auto; padding: 4px 8px; }
+  .picker-option {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 14px 12px; border: none; border-radius: 12px; background: none; color: var(--text);
+    font: inherit; font-size: 16px; text-align: left; cursor: pointer;
+  }
+  .picker-option:hover, .picker-option:focus-visible { background: var(--secondary); outline: none; }
+  .picker-option.selected { color: #16a34a; font-weight: 600; }
+  .picker-option.selected::after { content: "\2713"; font-size: 18px; }
   .dialog-error { color: #dc2626; font-size: 13px; margin: -4px 0 12px; display: none; }
 </style>
 </head>
@@ -455,6 +486,15 @@
       <button class="secondary" onclick="closeBranchDialog()" style="flex:1;" data-i18n="common.cancel">Cancel</button>
       <button class="primary" onclick="saveBranchDialog()" style="flex:1; margin:0;" data-i18n="common.save">Save</button>
     </div>
+  </div>
+</div>
+
+<!-- Selector sheet: the option list for every custom selector -->
+<div class="picker-overlay" id="pickerOverlay" onclick="if (event.target === this) closePicker()">
+  <div class="picker-sheet" role="listbox">
+    <div class="picker-handle"></div>
+    <div class="picker-title" id="pickerTitle"></div>
+    <div class="picker-list" id="pickerList"></div>
   </div>
 </div>
 
@@ -824,6 +864,98 @@ function initSampleData() {
   }
   state.sessions = sessions.sort((a, b) => b.date.localeCompare(a.date));
 }
+
+// ---------------------------------------------------------------------------
+// Custom selectors. Each <select> stays in the page as the source of truth,
+// so the rest of the code keeps reading and setting it as usual. It is hidden
+// behind a styled button, and tapping the button opens a bottom sheet list.
+// ---------------------------------------------------------------------------
+let pickerTarget = null;
+
+function enhanceSelects() {
+  const valueProp = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value");
+  document.querySelectorAll("select").forEach(sel => {
+    const wrap = document.createElement("div");
+    wrap.className = "picker";
+    wrap.style.cssText = sel.style.cssText;   // keep the select's layout (flex, width)
+    sel.removeAttribute("style");
+    sel.parentNode.insertBefore(wrap, sel);
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "picker-btn";
+    btn.setAttribute("aria-haspopup", "listbox");
+    btn.innerHTML = `<span class="picker-text"></span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+    btn.onclick = () => openPicker(sel);
+    wrap.append(sel, btn);
+    sel.tabIndex = -1;
+    sel.setAttribute("aria-hidden", "true");
+
+    // Keep the button label in step with the select, however it changes
+    const sync = () => {
+      const option = sel.options[sel.selectedIndex];
+      btn.firstElementChild.textContent = option ? option.text : "";
+    };
+    Object.defineProperty(sel, "value", {
+      get() { return valueProp.get.call(sel); },
+      set(v) { valueProp.set.call(sel, v); sync(); }
+    });
+    new MutationObserver(sync).observe(sel, { childList: true, subtree: true, characterData: true });
+    sel.addEventListener("change", sync);
+    if (sel.form) sel.form.addEventListener("reset", () => setTimeout(sync));
+    sync();
+  });
+}
+
+function openPicker(sel) {
+  pickerTarget = sel;
+  const label = sel.parentNode.previousElementSibling;
+  const title = document.getElementById("pickerTitle");
+  title.textContent = label && label.tagName === "LABEL" ? label.textContent : "";
+  title.style.display = title.textContent ? "block" : "none";
+
+  const list = document.getElementById("pickerList");
+  list.innerHTML = "";
+  [...sel.options].forEach((option, i) => {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "picker-option" + (i === sel.selectedIndex ? " selected" : "");
+    item.setAttribute("role", "option");
+    item.setAttribute("aria-selected", i === sel.selectedIndex);
+    item.textContent = option.text;
+    item.onclick = () => choosePickerOption(i);
+    list.appendChild(item);
+  });
+
+  sel.nextElementSibling.classList.add("open");
+  document.getElementById("pickerOverlay").style.display = "flex";
+  const selected = list.querySelector(".selected") || list.firstElementChild;
+  if (selected) { selected.scrollIntoView({ block: "center" }); selected.focus(); }
+}
+
+function closePicker() {
+  document.getElementById("pickerOverlay").style.display = "none";
+  if (pickerTarget) {
+    const btn = pickerTarget.nextElementSibling;
+    btn.classList.remove("open");
+    btn.focus();
+  }
+  pickerTarget = null;
+}
+
+function choosePickerOption(index) {
+  const sel = pickerTarget;
+  closePicker();
+  if (sel.selectedIndex !== index) {
+    sel.selectedIndex = index;
+    sel.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+}
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && pickerTarget) closePicker();
+});
 
 function toggleDarkMode() {
   const on = document.getElementById("darkModeToggle").checked;
@@ -1602,6 +1734,7 @@ function saveVehicleDialog() {
 }
 
 loadState();
+enhanceSelects();
 applyStaticStrings();
 applyDarkMode();
 checkLogin();

@@ -340,6 +340,7 @@ Numbers and month names follow the selected language's conventions. The examples
 - **Cards:** 16px corner radius with a soft elevated shadow.
 - **Typography:** the system font. Screen titles are 20px bold and key figures are 28px bold.
 - **Form controls:** full width, 12px corner radius, 16px text.
+- **Selectors:** every drop-down uses the app's own control, never the browser's default. Closed, it looks like the other form controls, with the chosen value and a chevron. Tapping it opens a bottom sheet listing the options, with the current one in the accent colour and ticked. Choosing an option, tapping outside the sheet or pressing Escape closes it.
 
 **Themes**
 
