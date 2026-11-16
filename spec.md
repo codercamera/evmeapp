@@ -172,16 +172,16 @@ Card labels do not repeat the period. The period selector is the only place it i
 
 **Home vs Public**
 
-- The card is a small table: the type name on the left, and its cost with its average cost per kWh on the right, for example `Home` · `฿820` · `฿5.40/kWh`.
+- The card is a small table: the type name on the left, and its cost with its average cost per kWh on the right, for example `Home` · `820` · `5.40/kWh`.
 - A type with no energy in the period shows `—` for its rate.
-- When both types have a rate, a final row labelled "Public vs Home" shows the public rate minus the home rate as a signed figure, for example `+฿2.35/kWh`, or `−฿0.40/kWh` when public is cheaper.
+- When both types have a rate, a final row labelled "Public vs Home" shows the public rate minus the home rate as a signed figure, for example `+2.35/kWh`, or `−0.40/kWh` when public is cheaper.
 - The difference is shown as a signed number, not a sentence, so that it reads the same in every language.
 
 **Monthly Budget card**
 
 - The card always covers the current calendar month and all vehicles, whatever the period and vehicle selectors show. Its label says so: "Monthly Budget · All vehicles".
-- It shows the amount spent, the budget, and what remains, for example `฿1,240 of ฿2,000 · ฿760 left`.
-- When spending is over the budget, it shows the excess, for example `฿2,240 of ฿2,000 · ฿240 over`.
+- It shows the amount spent, the budget, and what remains, for example `1,240 of 2,000 · 760 left`.
+- When spending is over the budget, it shows the excess, for example `2,240 of 2,000 · 240 over`.
 - A progress bar shows spending as a share of the budget. It is full when spending reaches or passes the budget.
 - The bar uses the accent colour below 80% of the budget, the warning colour from 80% up to 100%, and the destructive colour above 100%.
 - Tapping the card opens the budget dialog (section 6.6).
@@ -316,12 +316,14 @@ For a session, the message shows its date, vehicle and cost.
 - A comparison range that is cut to "the same number of days" starts on the first day of the earlier period and never runs past that period's last day.
 - Costs are stored exactly as entered. Rounding is for display only. Percentages and differences are calculated from the stored values, not the rounded ones.
 
+Amounts are shown without a currency symbol. All amounts are in Thai baht, and input labels say so, for example "Cost (THB)".
+
 Numbers and month names follow the selected language's conventions. The examples below are for English.
 
 | Value | Format | Example |
 |---|---|---|
-| Cost totals and session card cost | `฿` and whole baht, rounded half up | `฿1,240` |
-| Average cost per kWh | `฿` and two decimals | `฿6.85` |
+| Cost totals and session card cost | Whole baht, rounded half up | `1,240` |
+| Average cost per kWh | Two decimals | `6.85` |
 | Change against comparison | Whole percentage | `12%` |
 | Energy | One decimal, followed by `kWh` | `32.5 kWh` |
 | Date | `YYYY-MM-DD` | `2026-11-14` |
@@ -375,7 +377,7 @@ All user-entered text (names, plates, notes) must be displayed as plain text. It
 | Deleting in-use items | Allowed. Sessions keep the old name. | Blocked while sessions use the item. |
 | Session delete | Swipe only. | Swipe, plus a Delete action in the Edit Session dialog. |
 | Sub-screens | No tab highlighted. | Settings tab stays highlighted. |
-| Monthly budget | Starts at ฿2,000 and resets on reload. | Starts empty and persists per user. |
+| Monthly budget | Starts at 2,000 and resets on reload. | Starts empty and persists per user. |
 | Add new branch | Browser prompt. | In-app input. |
 | Errors | Browser alerts, or silent. | In-app error messages. |
 | Vehicle details | Shows empty separators. | Empty details are left out. |
@@ -394,7 +396,7 @@ The app supports English (the default) and Thai. Section 6.6 defines how the use
 
 - Anything the user typed: vehicle names, provider and branch names, plates and notes.
 - The default provider and branch names in section 4.5.
-- Dates, which stay `YYYY-MM-DD`, the `฿` symbol and the unit `kWh`.
+- Dates, which stay `YYYY-MM-DD`, and the unit `kWh`.
 - Stored values. A session's type is stored as `Home` or `Public` whatever language is shown.
 
 **Rules for interface text**

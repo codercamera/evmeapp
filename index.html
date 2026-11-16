@@ -233,11 +233,11 @@
   </div>
   <div class="card">
     <div class="label" data-i18n="dash.total">Total Cost</div>
-    <div class="kpi" id="periodTotal">฿0</div>
+    <div class="kpi" id="periodTotal">0</div>
     <div class="delta" id="periodDelta" style="display:none;"></div>
     <div id="allTimeWrap">
       <div class="label" style="margin-top:8px;" data-i18n="dash.allTime">All-time Total</div>
-      <div id="allTimeTotal" style="font-size:18px; font-weight:600;">฿0</div>
+      <div id="allTimeTotal" style="font-size:18px; font-weight:600;">0</div>
     </div>
   </div>
   <div class="card" id="budgetCard" onclick="openBudgetDialog()" style="display:none; cursor:pointer;">
@@ -248,7 +248,7 @@
   <div class="row">
     <div class="card">
       <div class="label" data-i18n="dash.avg">Avg. Cost / kWh</div>
-      <div class="kpi" id="avgCost" style="font-size:22px;">฿0</div>
+      <div class="kpi" id="avgCost" style="font-size:22px;">0</div>
     </div>
     <div class="card">
       <div class="label" data-i18n="dash.homeVsPublic">Home vs Public</div>
@@ -928,14 +928,14 @@ function renderVehicleSelect() {
   };
 }
 
-function fmtBaht(n) {
-  return "฿" + Math.round(n).toLocaleString(LOCALES[lang]);
+function fmtMoney(n) {
+  return Math.round(n).toLocaleString(LOCALES[lang]);
 }
 
-// Cost per kWh as a bare amount, e.g. "฿6.85". Shows a dash when there is no energy.
+// Cost per kWh as a bare amount, e.g. "6.85". Shows a dash when there is no energy.
 function fmtRate(cost, kwh) {
   if (!kwh) return "—";
-  return "฿" + (cost / kwh).toLocaleString(LOCALES[lang], { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return (cost / kwh).toLocaleString(LOCALES[lang], { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function ymd(d) {
@@ -989,9 +989,9 @@ function renderDashboard() {
   const total = sumCost(inPeriod);
 
   // Total cost, with the change against the comparison range
-  document.getElementById("periodTotal").textContent = fmtBaht(total);
+  document.getElementById("periodTotal").textContent = fmtMoney(total);
   document.getElementById("allTimeWrap").style.display = period.start ? "block" : "none";
-  document.getElementById("allTimeTotal").textContent = fmtBaht(sumCost(filtered));
+  document.getElementById("allTimeTotal").textContent = fmtMoney(sumCost(filtered));
 
   const delta = document.getElementById("periodDelta");
   const cmpTotal = period.start ? sumCost(inRange(filtered, period.cmpStart, period.cmpEnd)) : 0;
@@ -1013,7 +1013,7 @@ function renderDashboard() {
     const spent = sumCost(state.sessions.filter(s => s.date.startsWith(thisMonth)));
     const ratio = spent / budget;
     document.getElementById("budgetText").textContent = t(ratio > 1 ? "budget.over" : "budget.left", {
-      spent: fmtBaht(spent), budget: fmtBaht(budget), rest: fmtBaht(Math.abs(budget - spent))
+      spent: fmtMoney(spent), budget: fmtMoney(budget), rest: fmtMoney(Math.abs(budget - spent))
     });
     const fill = document.getElementById("budgetFill");
     fill.style.width = Math.min(100, ratio * 100) + "%";
@@ -1036,7 +1036,7 @@ function renderDashboard() {
   const perKwh = v => v.kwh ? t("rate", { amount: fmtRate(v.cost, v.kwh) }) : "—";
   const typeRow = (label, v) => `<div class="type-row">
       <span>${label}</span>
-      <span class="type-value"><strong>${fmtBaht(v.cost)}</strong><small>${perKwh(v)}</small></span>
+      <span class="type-value"><strong>${fmtMoney(v.cost)}</strong><small>${perKwh(v)}</small></span>
     </div>`;
   let typeHtml = typeRow(t("type.home"), home) + typeRow(t("type.public"), pub);
   if (home.kwh && pub.kwh) {
@@ -1055,7 +1055,7 @@ function renderDashboard() {
     byProv[s.provider] = (byProv[s.provider] || 0) + s.cost;
   });
   const provHtml = Object.entries(byProv).sort((a, b) => b[1] - a[1]).slice(0, 5)
-    .map(([p, c]) => `<div class="type-row"><span>${p}</span><strong>${fmtBaht(c)}</strong></div>`).join("")
+    .map(([p, c]) => `<div class="type-row"><span>${p}</span><strong>${fmtMoney(c)}</strong></div>`).join("")
     || `<div class='empty'>${t("dash.noPublic")}</div>`;
   document.getElementById("providerBreakdown").innerHTML = provHtml;
 
@@ -1109,7 +1109,7 @@ function sessionRow(s) {
         <small style="color:var(--muted);">${s.date} \u00b7 ${t("energy", { amount: s.kwh })} \u00b7 ${loc}</small>
       </div>
       <div style="text-align:right;">
-        <div>${fmtBaht(s.cost)} <span class="badge ${s.type.toLowerCase()}">${typeName(s.type)}</span></div>
+        <div>${fmtMoney(s.cost)} <span class="badge ${s.type.toLowerCase()}">${typeName(s.type)}</span></div>
       </div>
     </div>
   </div>`;
@@ -1320,7 +1320,7 @@ function deleteSession(id) {
   if (!s) return;
   showDeleteDialog(
     t("delete.session.title"),
-    t("delete.session.message", { date: s.date, vehicle: s.vehicle, cost: fmtBaht(s.cost) }),
+    t("delete.session.message", { date: s.date, vehicle: s.vehicle, cost: fmtMoney(s.cost) }),
     () => {
       state.sessions = state.sessions.filter(x => x.id !== id);
       saveState();
@@ -1331,7 +1331,7 @@ function deleteSession(id) {
 
 function renderManage() {
   const budgetValue = document.getElementById("budgetSettingValue");
-  if (budgetValue) budgetValue.textContent = state.monthlyBudget ? t("settings.budgetValue", { amount: fmtBaht(state.monthlyBudget) }) : t("settings.notSet");
+  if (budgetValue) budgetValue.textContent = state.monthlyBudget ? t("settings.budgetValue", { amount: fmtMoney(state.monthlyBudget) }) : t("settings.notSet");
 
   const grid = document.getElementById("vehicleGrid");
   if (grid) {
