@@ -317,6 +317,22 @@
   /* Scroll lock while a dialog or sheet is open: the page behind stays put */
   body.scroll-locked { position: fixed; left: 0; right: 0; overflow: hidden; }
   #sessionForm, .all-list, .picker-list { overscroll-behavior: contain; }
+  /* Charge photos */
+  .energy-row { display: flex; gap: 8px; align-items: stretch; margin-bottom: 12px; }
+  .energy-row .amount-field { flex: 1; margin-bottom: 0; }
+  .photo-tile { width: 56px; min-height: 52px; flex-shrink: 0; padding: 0; border-radius: 12px; border: 1.5px dashed #16a34a; background: rgba(22,163,74,0.08); color: #16a34a; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 20px; overflow: hidden; cursor: pointer; }
+  .photo-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photo-tile small { font-size: 9px; font-weight: 600; margin-top: 1px; }
+  .session-thumb { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; flex-shrink: 0; cursor: zoom-in; }
+  .photo-menu { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 350; align-items: flex-end; justify-content: center; }
+  .photo-menu.open { display: flex; }
+  .photo-menu-sheet { background: var(--card); color: var(--text); width: 100%; max-width: 430px; border-radius: 20px 20px 0 0; padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); }
+  .photo-opt { display: block; width: 100%; padding: 15px 14px; border: none; background: none; color: var(--text); font: inherit; font-size: 16px; text-align: left; border-radius: 12px; cursor: pointer; }
+  .photo-opt:hover { background: var(--secondary); }
+  .photo-opt.danger { color: #dc2626; }
+  .photo-view { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 500; align-items: center; justify-content: center; padding: 16px; }
+  .photo-view.open { display: flex; }
+  .photo-view img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
   .dialog-error { color: #dc2626; font-size: 13px; margin: -4px 0 12px; display: none; }
 </style>
 </head>
@@ -452,9 +468,12 @@
         <button type="button" class="kbd-btn" onclick="openKeypad(document.getElementById('addCost'), 2)" aria-label="Keypad">⌨</button>
       </div>
       <label class="label" data-i18n="field.energy">Energy (kWh)</label>
+      <div class="energy-row">
       <div class="amount-field">
         <input id="addKwh" type="text" inputmode="decimal" readonly required placeholder="0.0" data-label-key="field.energy" data-unit="kWh" onclick="openKeypad(this, 1)">
         <button type="button" class="kbd-btn" onclick="openKeypad(document.getElementById('addKwh'), 1)" aria-label="Keypad">⌨</button>
+      </div>
+      <button type="button" class="photo-tile" id="photoTile" onclick="openPhotoMenu()" aria-label="Photo"></button>
       </div>
       <div class="inline-pad" id="keypadPad">
         <div class="keypad-label" id="keypadLabel"></div>
@@ -644,6 +663,17 @@
   </div>
 </div>
 
+<input type="file" id="photoCamera" accept="image/*" capture="environment" hidden onchange="handlePhoto(this)">
+<input type="file" id="photoGallery" accept="image/*" hidden onchange="handlePhoto(this)">
+<div class="photo-menu" id="photoMenu" onclick="if (event.target === this) closePhotoMenu()">
+  <div class="photo-menu-sheet">
+    <button type="button" class="photo-opt" onclick="document.getElementById('photoCamera').click()" data-i18n="photo.take">Take photo</button>
+    <button type="button" class="photo-opt" onclick="document.getElementById('photoGallery').click()" data-i18n="photo.gallery">Choose from gallery</button>
+    <button type="button" class="photo-opt danger" id="photoRemove" onclick="removePhoto()" data-i18n="photo.remove">Remove photo</button>
+    <button type="button" class="photo-opt" onclick="closePhotoMenu()" data-i18n="photo.cancel">Cancel</button>
+  </div>
+</div>
+<div class="photo-view" id="photoView" onclick="closePhotoView()"><img id="photoViewImg" alt=""></div>
 <nav id="nav" style="display:none;">
   <button onclick="show('dashboard')" data-screen="dashboard" class="active">
     <span class="icon">🏠</span><span data-i18n="nav.dashboard">Dashboard</span>
@@ -727,6 +757,11 @@ const STRINGS = {
     "place.title": "Choose a place",
     "place.use": "Use this place",
     "recent.used": "Places you have used",
+    "photo.label": "Photo",
+    "photo.take": "Take photo",
+    "photo.gallery": "Choose from gallery",
+    "photo.remove": "Remove photo",
+    "photo.cancel": "Cancel",
     "hint.swipe": "Tap a session to edit it. Swipe right to delete, or left to edit.",
     "session.add": "Add Session",
     "session.edit": "Edit Session",
@@ -863,6 +898,11 @@ const STRINGS = {
     "place.title": "เลือกสถานที่",
     "place.use": "ใช้สถานที่นี้",
     "recent.used": "สถานที่ที่เคยใช้",
+    "photo.label": "รูป",
+    "photo.take": "ถ่ายรูป",
+    "photo.gallery": "เลือกจากคลังรูป",
+    "photo.remove": "ลบรูป",
+    "photo.cancel": "ยกเลิก",
     "hint.swipe": "แตะรายการเพื่อแก้ไข ปัดขวาเพื่อลบ หรือปัดซ้ายเพื่อแก้ไข",
     "session.add": "เพิ่มรายการชาร์จ",
     "session.edit": "แก้ไขรายการชาร์จ",
@@ -1235,6 +1275,8 @@ function openSessionDialog() {
 function closeSessionDialog() {
   closeKeypad();
   closeAllPick();
+  closePhotoMenu();
+  photoDraft = null;
   document.getElementById("sessionDialog").style.display = "none";
 }
 
@@ -1455,6 +1497,7 @@ function sessionRow(s) {
         <small style="color:var(--muted);">${s.date} · ${t("energy", { amount: s.kwh })} · ${loc}</small>
       </div>
       <div class="session-end">
+        ${s.photo ? `<img class="session-thumb" src="${s.photo}" alt="" onclick="event.stopPropagation(); viewPhoto(${s.id})">` : ""}
         <div>${fmtMoney(s.cost)} <span class="badge ${s.type.toLowerCase()}">${typeName(s.type)}</span></div>
         <span class="session-chevron">›</span>
       </div>
@@ -1571,6 +1614,8 @@ function resetForm() {
   togglePublic();
   updatePlaceLabel();
   recentSelectedId = null;
+  photoDraft = null;
+  renderPhotoTile();
   renderRecentPick();
   closeAllPick();
   setAdvanced(state.vehicles.length === 0);
@@ -1622,7 +1667,8 @@ function saveSession(e) {
     start: document.getElementById("addStart").value || null,
     end: document.getElementById("addEnd").value || null,
     duration: document.getElementById("addDuration").value || null,
-    note: document.getElementById("addNote").value || ""
+    note: document.getElementById("addNote").value || "",
+    photo: photoDraft
   };
   if (id) {
     const idx = state.sessions.findIndex(s => s.id === +id);
@@ -1645,6 +1691,8 @@ function editSession(id) {
   document.getElementById("editId").value = s.id;
   document.getElementById("quickDefaults").style.display = "none";
   document.getElementById("recentBlock").style.display = "none";
+  photoDraft = s.photo || null;
+  renderPhotoTile();
   document.getElementById("addVehicle").value = s.vehicle;
   document.getElementById("addDate").value = s.date;
   document.getElementById("addCost").value = String(s.cost);
@@ -1718,6 +1766,74 @@ document.addEventListener("keydown", e => {
 // "Show all" opens the full list in the same sheet.
 // ---------------------------------------------------------------------------
 let recentSelectedId = null;
+
+// ---------------------------------------------------------------------------
+// Charge photo: one optional photo per session, shrunk before it is kept.
+// ---------------------------------------------------------------------------
+let photoDraft = null;
+
+function renderPhotoTile() {
+  const tile = document.getElementById("photoTile");
+  tile.innerHTML = photoDraft
+    ? `<img src="${photoDraft}" alt="">`
+    : `<span>\u{1F4F7}</span><small>${t("photo.label")}</small>`;
+  document.getElementById("photoRemove").style.display = photoDraft ? "block" : "none";
+}
+
+function openPhotoMenu() {
+  document.getElementById("photoMenu").classList.add("open");
+}
+
+function closePhotoMenu() {
+  document.getElementById("photoMenu").classList.remove("open");
+}
+
+function removePhoto() {
+  photoDraft = null;
+  renderPhotoTile();
+  closePhotoMenu();
+}
+
+// Shrink to at most 1024px on the long side, as JPEG, so each photo stays small.
+function shrinkImage(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, 1024 / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL("image/jpeg", 0.8));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("not an image")); };
+    img.src = url;
+  });
+}
+
+function handlePhoto(input) {
+  const file = input.files && input.files[0];
+  input.value = "";
+  if (!file) return;
+  shrinkImage(file).then(data => {
+    photoDraft = data;
+    renderPhotoTile();
+    closePhotoMenu();
+  }).catch(() => alert("That file is not a picture."));
+}
+
+function viewPhoto(id) {
+  const s = state.sessions.find(x => x.id === id);
+  if (!s || !s.photo) return;
+  document.getElementById("photoViewImg").src = s.photo;
+  document.getElementById("photoView").classList.add("open");
+}
+
+function closePhotoView() {
+  document.getElementById("photoView").classList.remove("open");
+}
 
 function pickRowHtml(s) {
   const place = s.type === "Home" ? t("type.home") : [s.provider, s.branch].filter(Boolean).join(" \u00b7 ");
