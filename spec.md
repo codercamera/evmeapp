@@ -67,6 +67,7 @@ EV Charging Expenses lets an electric-vehicle owner log each charging session an
 - **Energy** is stored as whole watt-hours in `INTEGER` columns. 18.5 kWh is stored as `18500`. Input allows one decimal of a kWh, so stored values are multiples of 100.
 - **Dates** are `TEXT` in `YYYY-MM-DD` form and carry no time of day. **Timestamps** are `TEXT` in UTC ISO 8601 form, for example `2026-11-16T08:30:00Z`.
 - Names are trimmed of leading and trailing spaces before saving. Uniqueness of names ignores letter case.
+- **Photos** are stored as files on disk, not in the database. The database holds one row per photo that links the session to its file (section 4.6).
 
 ### 4.2 Schema
 
@@ -159,13 +160,16 @@ CREATE INDEX idx_sessions_vehicle   ON sessions(vehicle_id);
 CREATE INDEX idx_sessions_provider  ON sessions(provider_id);
 CREATE INDEX idx_sessions_branch    ON sessions(branch_id);
 
--- One optional photo per session
+-- One optional photo per session. The image itself is a file on disk
+-- (section 4.6); this table links the session to that file.
 CREATE TABLE session_photos (
   session_id  INTEGER PRIMARY KEY REFERENCES sessions(id) ON DELETE CASCADE,
+  guid        TEXT    NOT NULL UNIQUE
+                      CHECK (length(guid) = 36 AND guid = lower(guid)),
   mime_type   TEXT    NOT NULL DEFAULT 'image/jpeg' CHECK (mime_type = 'image/jpeg'),
   width       INTEGER NOT NULL CHECK (width  BETWEEN 1 AND 1024),
   height      INTEGER NOT NULL CHECK (height BETWEEN 1 AND 1024),
-  image       BLOB    NOT NULL CHECK (length(image) <= 1048576),
+  size_bytes  INTEGER NOT NULL CHECK (size_bytes BETWEEN 1 AND 1048576),
   created_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 ```
@@ -175,7 +179,7 @@ Rules the schema cannot express, which the server must enforce:
 - A session's vehicle and provider must belong to the same user as the session.
 - A session's `session_date` must be a real calendar date.
 - `updated_at` is set on every change to a session or to the settings row.
-- Lists of sessions must never load the photo `image` column. They need only whether a photo exists.
+- Lists of sessions need only whether a photo exists, which is whether a `session_photos` row exists. They must not read image files.
 
 ### 4.3 Starting data for a new account
 
@@ -202,7 +206,8 @@ Creating an account must, in the same transaction:
 
 | Data | Where | Lifetime |
 |---|---|---|
-| Account, vehicles, providers, branches, sessions, photos | Database | Until the user deletes them. |
+| Account, vehicles, providers, branches, sessions | Database | Until the user deletes them. |
+| Photo files | `data/images` on the server, linked from `session_photos` | Until the photo or its session is deleted. |
 | Monthly budget | Database (`user_settings`) | Until changed. Follows the account to every device. |
 | Theme, language, font size, "swipe tip seen" | The device | Until changed. Not sent to the server. |
 | Vehicle selection, dashboard period, session filters, expanded provider | Memory | Reset when the app is reloaded. |
@@ -211,12 +216,48 @@ Creating an account must, in the same transaction:
 
 | Record | Rule |
 |---|---|
-| Session | Deleted outright after confirmation, with its photo. |
+| Session | Deleted outright after confirmation, with its photo row and photo file. |
 | Vehicle | Cannot be deleted while any session uses it. |
 | Provider | Cannot be deleted while any session uses it. Otherwise it is deleted with its branches. |
 | Branch | Cannot be deleted while any session uses it. |
 
 When a delete is blocked, the confirmation dialog explains why and states how many sessions use the item. It offers only a Close button.
+
+### 4.6 Photo files
+
+Photo images are kept as files under `data/images`, not in the database.
+
+**Naming and location**
+
+- When a photo is saved, the server generates a new GUID for it: a random version 4 UUID, written in lowercase with hyphens, for example `3f2a9c1e-7b4d-4e8a-9c2f-1a6b5d0e4f77`. The client never chooses the GUID.
+- The file name is the GUID with the extension `.jpg`.
+- The file is placed in a sub-folder named after the first three characters of the GUID. The sub-folder is created if it does not exist.
+- The full path is therefore `data/images/<first 3 characters>/<guid>.jpg`.
+
+| GUID | File path |
+|---|---|
+| `3f2a9c1e-7b4d-4e8a-9c2f-1a6b5d0e4f77` | `data/images/3f2/3f2a9c1e-7b4d-4e8a-9c2f-1a6b5d0e4f77.jpg` |
+| `a07d55b2-1c3e-4f6a-8b9d-2e4f6a8c0b1d` | `data/images/a07/a07d55b2-1c3e-4f6a-8b9d-2e4f6a8c0b1d.jpg` |
+
+- The three characters are hexadecimal (`0`–`9`, `a`–`f`), so there are at most 4,096 sub-folders.
+- The path is always derived from the GUID. It is not stored in the database.
+
+**Link to the database**
+
+- Each photo has one row in `session_photos`, holding the session it belongs to and the file's GUID. That row is the only link between a session and its file.
+- A GUID is never reused. Replacing a session's photo creates a new GUID and a new file, and the old file is deleted.
+
+**Keeping files and rows in step**
+
+- Saving: the server writes the file first, then inserts or updates the row in the same transaction as the session. If the transaction fails, the server deletes the file it just wrote.
+- Deleting: when a photo is removed, or its session is deleted, the server deletes the row first and removes the file after the transaction commits.
+- Deleting an account deletes all of that user's photo files.
+- A file with no row, or a row with no file, is an error state. The server must provide a clean-up task that removes files with no row and reports rows with no file.
+
+**Access**
+
+- `data/images` must not be served directly to the web. A photo is returned only by the server, and only to the signed-in user who owns its session.
+- The database file and `data/images` together hold the system's data and must be backed up together.
 
 ## 5. Navigation
 
@@ -422,9 +463,10 @@ Each session may have one photo, typically of the charger's screen or the receip
 
 **Storage and display**
 
-- The cropped photo is uploaded when the session is saved, and stored in `session_photos`. It must be at most 1 MB.
+- The cropped photo is uploaded when the session is saved. It must be at most 1 MB.
 - The server must check that the upload is a JPEG no larger than 1024 × 1024 pixels and must reject anything else.
-- Removing the photo and saving deletes its row.
+- The server saves the image as a file under `data/images` and records it in `session_photos`, as defined in section 4.6.
+- Removing the photo and saving deletes its row and its file.
 - A session with a photo shows the thumbnail on its card (section 6.4).
 
 ### 6.8 Edit Session sheet
@@ -610,6 +652,7 @@ The app must be installable on a phone's home screen as a progressive web app.
 
 - The system is a web client and a server. The server owns the SQLite database and is the only component that reads or writes it.
 - The client talks to the server over HTTPS. The shape of the interface between them is the implementer's choice, as long as every rule in this document is enforced on the server.
-- Creating an account with its starting data, and saving a session with its photo, must each be a single transaction.
+- Creating an account with its starting data must be a single transaction. Saving a session with its photo row must be a single transaction, with the photo file handled as section 4.6 defines.
+- The location of the `data` folder must be configurable. The server must be the only process that writes to it.
 - Dashboard figures may be calculated on the server or on the client, but both must give the results defined in sections 6.2 and 7.
 - Schema changes after the first release must be applied by versioned migrations.
