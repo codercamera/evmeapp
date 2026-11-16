@@ -200,6 +200,7 @@
   }
   .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
   .filters .picker { flex: 1; min-width: 100px; margin-bottom: 0; }
+  .filters .picker-btn { font-size: 14px; padding: 10px; gap: 4px; }
   .empty { text-align: center; color: var(--muted); padding: 40px 0; }
   .manage-list { max-height: 200px; overflow-y: auto; }
   .manage-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
@@ -258,6 +259,16 @@
     color: white; font-weight: 600; opacity: 0; transition: opacity .15s; border-radius: 16px;
   }
   .session-action.delete { background: #dc2626; justify-content: flex-start; }
+  .session-wrap .card.session { cursor: pointer; }
+  .session-end { display: flex; align-items: center; gap: 8px; text-align: right; flex-shrink: 0; }
+  .session-chevron { color: var(--muted); font-size: 22px; line-height: 1; }
+  .swipe-hint {
+    display: none; align-items: center; gap: 10px; margin-bottom: 12px; padding: 10px 12px;
+    background: #dcfce7; color: #166534; border-radius: 12px; font-size: 13px;
+  }
+  body.dark .swipe-hint { background: #14532d; color: #dcfce7; }
+  .swipe-hint span { flex: 1; }
+  .swipe-hint button { background: none; border: none; color: inherit; font-size: 16px; padding: 4px 8px; cursor: pointer; }
   .session-action.edit { background: #16a34a; justify-content: flex-end; }
   .dialog-error { color: #dc2626; font-size: 13px; margin: -4px 0 12px; display: none; }
 </style>
@@ -338,6 +349,10 @@
     </select>
     <select id="filterProvider" onchange="renderSessions()"><option value="">All providers</option></select>
   </div>
+  <div class="swipe-hint" id="swipeHint">
+    <span data-i18n="hint.swipe">Tap a session to edit it. Swipe right to delete, or left to edit.</span>
+    <button onclick="dismissSwipeHint()" aria-label="Close">✕</button>
+  </div>
   <div id="sessionList"></div>
 </div>
 
@@ -378,6 +393,7 @@
       <input type="number" id="addDuration" min="0">
       <label class="label" data-i18n="field.note">Note (optional)</label>
       <textarea id="addNote" rows="2"></textarea>
+      <button type="button" class="secondary danger" id="sessionDeleteBtn" onclick="deleteFromSheet()" style="display:none; width:100%; margin-top:4px;" data-i18n="delete.session.title">Delete Session</button>
     </form>
     <div style="display:flex; gap:12px; padding:12px 20px calc(20px + env(safe-area-inset-bottom)); background:var(--card); border-top:1px solid var(--border);">
       <button type="button" class="secondary" onclick="closeSessionDialog()" style="flex:1; margin:0;" data-i18n="common.cancel">Cancel</button>
@@ -609,6 +625,7 @@ const STRINGS = {
     "filter.allProviders": "All providers",
     "sessions.title": "Sessions",
     "sessions.none": "No sessions match the filters",
+    "hint.swipe": "Tap a session to edit it. Swipe right to delete, or left to edit.",
     "session.add": "Add Session",
     "session.edit": "Edit Session",
     "session.save": "Save Session",
@@ -731,6 +748,7 @@ const STRINGS = {
     "filter.allProviders": "ผู้ให้บริการทั้งหมด",
     "sessions.title": "รายการชาร์จ",
     "sessions.none": "ไม่มีรายการที่ตรงกับตัวกรอง",
+    "hint.swipe": "แตะรายการเพื่อแก้ไข ปัดขวาเพื่อลบ หรือปัดซ้ายเพื่อแก้ไข",
     "session.add": "เพิ่มรายการชาร์จ",
     "session.edit": "แก้ไขรายการชาร์จ",
     "session.save": "บันทึกรายการ",
@@ -1290,13 +1308,15 @@ function sessionRow(s) {
          ontouchmove="moveSwipe(event, ${s.id})"
          ontouchend="endSwipe(event, ${s.id})"
          ontouchcancel="resetSwipe(event.currentTarget)"
+         onclick="tapSession(${s.id})"
          oncontextmenu="event.preventDefault(); editSession(${s.id})">
       <div>
         <strong>${s.vehicle}</strong><br>
         <small style="color:var(--muted);">${s.date} · ${t("energy", { amount: s.kwh })} · ${loc}</small>
       </div>
-      <div style="text-align:right;">
+      <div class="session-end">
         <div>${fmtMoney(s.cost)} <span class="badge ${s.type.toLowerCase()}">${typeName(s.type)}</span></div>
+        <span class="session-chevron">›</span>
       </div>
     </div>
   </div>`;
@@ -1338,10 +1358,32 @@ function moveSwipe(e, id) {
 
 function endSwipe(e, id) {
   if (swipeState.id !== id) return;
-  const dx = swipeState.mode === "swipe" ? swipeState.dx : 0;
+  const swiped = swipeState.mode === "swipe";
+  const dx = swiped ? swipeState.dx : 0;
   resetSwipe(e.currentTarget);
-  if (dx >= SWIPE_TRIGGER) deleteSession(id);
-  else if (dx <= -SWIPE_TRIGGER) editSession(id);
+  if (swiped) lastSwipeAt = Date.now();
+  if (dx >= SWIPE_TRIGGER) { dismissSwipeHint(); deleteSession(id); }
+  else if (dx <= -SWIPE_TRIGGER) { dismissSwipeHint(); editSession(id); }
+}
+
+// A tap on a card opens it for editing. A tap that is really the end of a
+// swipe is ignored.
+let lastSwipeAt = 0;
+function tapSession(id) {
+  if (Date.now() - lastSwipeAt < 400) return;
+  editSession(id);
+}
+
+// One-time tip above the session list. It goes away when closed or after the
+// first swipe, and stays away on this device.
+function renderSwipeHint() {
+  const hint = document.getElementById("swipeHint");
+  if (hint) hint.style.display = localStorage.getItem("evmeapp-swipe-hint") === "seen" ? "none" : "flex";
+}
+
+function dismissSwipeHint() {
+  try { localStorage.setItem("evmeapp-swipe-hint", "seen"); } catch (e) {}
+  renderSwipeHint();
 }
 
 function resetSwipe(row) {
@@ -1352,6 +1394,7 @@ function resetSwipe(row) {
 }
 
 function renderSessions() {
+  renderSwipeHint();
   let list = getFilteredSessions();
   const month = document.getElementById("filterMonth").value;
   const type = document.getElementById("filterType").value;
@@ -1380,6 +1423,7 @@ function renderSessions() {
 
 function resetForm() {
   document.getElementById("formTitle").textContent = t("session.add");
+  document.getElementById("sessionDeleteBtn").style.display = "none";
   document.getElementById("editId").value = "";
   document.getElementById("sessionForm").reset();
   document.getElementById("addDate").valueAsDate = new Date();
@@ -1451,6 +1495,7 @@ function editSession(id) {
   if (!s) return;
   openSessionDialog();
   document.getElementById("formTitle").textContent = t("session.edit");
+  document.getElementById("sessionDeleteBtn").style.display = "block";
   document.getElementById("editId").value = s.id;
   document.getElementById("addVehicle").value = s.vehicle;
   document.getElementById("addDate").value = s.date;
@@ -1465,6 +1510,13 @@ function editSession(id) {
   document.getElementById("addEnd").value = s.end || "";
   document.getElementById("addDuration").value = s.duration || "";
   document.getElementById("addNote").value = s.note || "";
+}
+
+// Delete from the edit sheet: close the sheet, then ask for confirmation
+function deleteFromSheet() {
+  const id = +document.getElementById("editId").value;
+  closeSessionDialog();
+  deleteSession(id);
 }
 
 function showDeleteDialog(title, message, onConfirm) {

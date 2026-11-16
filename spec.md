@@ -215,17 +215,25 @@ Used on the Dashboard and the Sessions screen. Each session is a separate card.
 - **Right:** the cost, and a type badge (green for Home, blue for Public).
 - Battery percentages, duration and note are not shown on the card. They are visible in the Edit Session dialog.
 
-Cards have no visible buttons. They respond to:
+Each card shows a chevron (›) on the right to signal that it can be opened. Cards respond to:
 
 | Action | Result |
 |---|---|
+| Tap or click | Opens the Edit Session dialog. This is the main way to edit, and to delete through the dialog's Delete action. |
 | Swipe left-to-right | The card follows the finger up to 100px and a red "Delete" background appears on the left. Releasing after 80px or more opens the delete confirmation. A shorter swipe snaps back. |
 | Swipe right-to-left | The card follows the finger up to 100px and a green "Edit" background appears on the right. Releasing after 80px or more opens the Edit Session dialog. A shorter swipe snaps back. |
-| Right-click | Opens the Edit Session dialog. This is the route for mouse users. |
+| Right-click | Opens the Edit Session dialog. |
 
 - A touch that begins by moving vertically scrolls the list and must not move the card.
 - A touch that begins by moving horizontally moves the card and must not scroll the list.
+- A tap that ends a swipe must not also open the dialog.
 - Long press does nothing.
+- The swipes are shortcuts. Every action they offer is also reachable by tapping the card.
+
+**Swipe tip**
+
+- The Sessions screen shows a one-line tip above the list: "Tap a session to edit it. Swipe right to delete, or left to edit."
+- The tip has a close button. It disappears for good on that device when closed or after the user's first completed swipe.
 
 ### 6.5 Add / Edit Session dialog
 
@@ -382,7 +390,6 @@ All user-entered text (names, plates, notes) must be displayed as plain text. It
 | Dark mode | Resets on reload. Some dialogs stay light. | Persists. All surfaces are themed. |
 | References | Sessions store vehicle, provider and branch by name. | Records are linked by `id`. |
 | Deleting in-use items | Allowed. Sessions keep the old name. | Blocked while sessions use the item. |
-| Session delete | Swipe only. | Swipe, plus a Delete action in the Edit Session dialog. |
 | Sub-screens | No tab highlighted. | Settings tab stays highlighted. |
 | Monthly budget | Starts at 2,000 and resets on reload. | Starts empty and persists per user. |
 | Add new branch | Browser prompt. | In-app input. |
