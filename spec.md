@@ -120,7 +120,7 @@ There is one budget per user. It covers all of the user's vehicles together.
 ## 5. Navigation
 
 - The sign-in screen is shown first unless the user is already signed in.
-- A bottom navigation bar has three tabs: **Dashboard**, **Sessions** and **Settings**. The active tab is highlighted.
+- A floating bottom navigation bar has three tabs: **Dashboard**, **Sessions** and **Settings**. It is a rounded pill, inset from the screen edges and lifted above the bottom of the screen, with a soft shadow. The active tab is highlighted with a green tint behind its icon and label.
 - A floating add button (`+`) sits above the navigation bar on every signed-in screen and opens the Add Session dialog.
 - **Vehicles** and **Chargers** are sub-screens of Settings. Each has a Back button that returns to Settings. The Settings tab stays highlighted while a sub-screen is open.
 - The navigation bar and the add button are hidden on the sign-in screen.
