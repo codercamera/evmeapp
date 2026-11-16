@@ -307,6 +307,10 @@
   .pick-amt { font-size: 13px; text-align: right; white-space: nowrap; }
   .all-pick { display: none; position: absolute; inset: 0; background: var(--card); color: var(--text); z-index: 5; flex-direction: column; border-radius: 20px 20px 0 0; padding: 16px 20px 0; }
   .all-pick.open { display: flex; }
+  .place-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); margin-bottom: 12px; cursor: pointer; }
+  .place-value { font-size: 15px; font-weight: 600; }
+  .place-box { border: 1px solid var(--border); border-radius: 16px; padding: 4px 12px 12px; margin-bottom: 12px; }
+  .place-use { width: 100%; margin-top: 10px; padding: 11px; border: none; border-radius: 12px; background: #16a34a; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; }
   .all-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
   .all-head .back-btn { background: none; border: none; color: #16a34a; font-size: 15px; font-weight: 600; cursor: pointer; padding: 6px 0; }
   .all-list { overflow-y: auto; flex: 1; padding-bottom: 16px; }
@@ -403,8 +407,26 @@
 <div id="sessionDialog" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:200; align-items:flex-end; justify-content:center;">
   <div id="sessionSheet" style="background:var(--card); color:var(--text); border-radius:20px 20px 0 0; width:100%; max-width:430px; height:75vh; margin:0; display:flex; flex-direction:column; box-shadow:0 -4px 24px rgba(0,0,0,0.15);">
       <div class="all-pick" id="allPick">
-        <div class="all-head"><button type="button" class="back-btn" onclick="closeAllPick()" data-i18n="recent.back">‹ Back</button><b data-i18n="recent.all">All charges</b></div>
-        <div class="all-list" id="allPickList"></div>
+        <div class="all-head"><button type="button" class="back-btn" onclick="closeAllPick()" data-i18n="recent.back">‹ Back</button><b data-i18n="place.title">Choose a place</b></div>
+        <div class="all-list">
+          <div class="place-box">
+            <label class="label" data-i18n="field.type">Type</label>
+        <select id="addType" onchange="togglePublic()">
+          <option value="Home" data-i18n="type.home">Home</option>
+          <option value="Public" data-i18n="type.public">Public</option>
+        </select>
+        <div id="publicFields" style="display:none;">
+          <label class="label" data-i18n="field.provider">Provider</label>
+          <select id="addProvider" onchange="updateBranches()"></select>
+          <label class="label" data-i18n="field.branch">Branch</label>
+          <select id="addBranch"></select>
+          <button type="button" class="secondary" onclick="addBranchOnFly()" data-i18n="field.addBranch" style="width:100%; margin-bottom:12px;">+ Add new branch</button>
+        </div>
+            <button type="button" class="place-use" onclick="usePlace()" data-i18n="place.use">Use this place</button>
+          </div>
+          <div class="sec-head"><span data-i18n="recent.used">Places you have used</span></div>
+          <div id="allPickRows"></div>
+        </div>
       </div>
     <div style="display:flex; justify-content:space-between; align-items:center; padding:20px 20px 0;">
       <h2 id="formTitle" style="margin:0;">Add Session</h2>
@@ -419,6 +441,10 @@
       <div class="defaults-note" id="quickDefaults" style="display:none;">
         <div class="defaults-title" data-i18n="quick.filled">Filled from your last session</div>
         <div id="quickSummary"></div>
+      </div>
+      <div class="place-row" onclick="openAllPick()">
+        <div><div class="label" data-i18n="place.label">Place</div><div id="placeLabel" class="place-value"></div></div>
+        <span class="session-chevron">›</span>
       </div>
       <label class="label" data-i18n="field.cost">Cost (THB)</label>
       <div class="amount-field">
@@ -447,18 +473,6 @@
         <select id="addVehicle" required></select>
         <label class="label" data-i18n="field.date">Date</label>
         <input type="date" id="addDate" required>
-        <label class="label" data-i18n="field.type">Type</label>
-        <select id="addType" onchange="togglePublic()">
-          <option value="Home" data-i18n="type.home">Home</option>
-          <option value="Public" data-i18n="type.public">Public</option>
-        </select>
-        <div id="publicFields" style="display:none;">
-          <label class="label" data-i18n="field.provider">Provider</label>
-          <select id="addProvider" onchange="updateBranches()"></select>
-          <label class="label" data-i18n="field.branch">Branch</label>
-          <select id="addBranch"></select>
-          <button type="button" class="secondary" onclick="addBranchOnFly()" data-i18n="field.addBranch" style="width:100%; margin-bottom:12px;">+ Add new branch</button>
-        </div>
         <label class="label" data-i18n="field.start">Start Battery % (optional)</label>
         <input type="number" id="addStart" min="0" max="100">
         <label class="label" data-i18n="field.end">End Battery % (optional)</label>
@@ -708,6 +722,11 @@ const STRINGS = {
     "recent.showAll": "Show all ({n})",
     "recent.back": "\u2039 Back",
     "recent.all": "All charges",
+    "place.label": "Place",
+    "place.choose": "Choose a place",
+    "place.title": "Choose a place",
+    "place.use": "Use this place",
+    "recent.used": "Places you have used",
     "hint.swipe": "Tap a session to edit it. Swipe right to delete, or left to edit.",
     "session.add": "Add Session",
     "session.edit": "Edit Session",
@@ -839,6 +858,11 @@ const STRINGS = {
     "recent.showAll": "ดูทั้งหมด ({n})",
     "recent.back": "\u2039 กลับ",
     "recent.all": "การชาร์จทั้งหมด",
+    "place.label": "สถานที่",
+    "place.choose": "เลือกสถานที่",
+    "place.title": "เลือกสถานที่",
+    "place.use": "ใช้สถานที่นี้",
+    "recent.used": "สถานที่ที่เคยใช้",
     "hint.swipe": "แตะรายการเพื่อแก้ไข ปัดขวาเพื่อลบ หรือปัดซ้ายเพื่อแก้ไข",
     "session.add": "เพิ่มรายการชาร์จ",
     "session.edit": "แก้ไขรายการชาร์จ",
@@ -1545,6 +1569,7 @@ function resetForm() {
   populateAddSelects();
   applyQuickDefaults();
   togglePublic();
+  updatePlaceLabel();
   recentSelectedId = null;
   renderRecentPick();
   closeAllPick();
@@ -1629,6 +1654,7 @@ function editSession(id) {
   if (s.provider) document.getElementById("addProvider").value = s.provider;
   updateBranches();
   if (s.branch) document.getElementById("addBranch").value = s.branch;
+  updatePlaceLabel();
   document.getElementById("addStart").value = s.start || "";
   document.getElementById("addEnd").value = s.end || "";
   document.getElementById("addDuration").value = s.duration || "";
@@ -1739,12 +1765,36 @@ function pickRecent(id) {
     }
   }
   closeAllPick();
+  updatePlaceLabel();
   renderRecentPick();
 }
 
 function openAllPick() {
-  document.getElementById("allPickList").innerHTML = uniquePlaces().map(pickRowHtml).join("");
+  document.getElementById("allPickRows").innerHTML = uniquePlaces().map(pickRowHtml).join("");
   document.getElementById("allPick").classList.add("open");
+}
+
+// The place currently chosen in the pickers, as a label for the form.
+function updatePlaceLabel() {
+  const type = document.getElementById("addType").value;
+  const provider = document.getElementById("addProvider").value;
+  let branch = document.getElementById("addBranch").value;
+  if (!(state.providers[provider] || []).includes(branch)) branch = "";
+  const text = type === "Home" ? t("type.home") : [provider, branch].filter(Boolean).join(" \u00b7 ");
+  document.getElementById("placeLabel").textContent = text || t("place.choose");
+}
+
+// Use the place chosen in the pickers, and return to the form.
+function usePlace() {
+  const type = document.getElementById("addType").value;
+  const provider = document.getElementById("addProvider").value;
+  const branch = document.getElementById("addBranch").value;
+  const match = state.sessions.find(s =>
+    s.type === type && (type === "Home" || (s.provider === provider && (s.branch || "") === branch)));
+  recentSelectedId = match ? match.id : null;
+  closeAllPick();
+  updatePlaceLabel();
+  renderRecentPick();
 }
 
 function closeAllPick() {

@@ -244,7 +244,9 @@ Each card shows a chevron (›) on the right to signal that it can be opened. Ca
 - Recent charges are not shown when editing.
 - Tapping Cost or Energy opens a keypad inside the sheet, below the fields. The keypad types into the field that was tapped, and the field shows a green border while it is active. Tapping the other field moves the keypad to it. Done closes the keypad.
 - The phone's own keyboard is not used for these two fields.
-- More reveals the remaining fields and the sheet grows to its full height.
+- Place: a row under the recent list shows the chosen place. Tapping it opens "Choose a place".
+- "Choose a place" holds Type, and for Public also Provider, Branch and "+ Add new branch", then "Use this place". Below them are the places used before, one row per place. Tapping a row chooses it and returns to the form at once.
+- More reveals the remaining fields (vehicle, date, start %, end %, duration and note) and the sheet grows to its full height.
 - Save and Cancel sit directly below the fields, so the sheet has no empty area.
 
 **Edit.** Every field is shown at once, and the sheet is full height. Delete appears at the foot of the form.
