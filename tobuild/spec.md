@@ -54,7 +54,7 @@ EV Charging Expenses lets an electric-vehicle owner log each charging session an
 - Passwords must be stored only as a salted hash from a password-hashing algorithm (Argon2id or bcrypt). They must never be logged or returned.
 - Sign-in tokens must be random, at least 256 bits, and stored on the server only as a hash.
 - Every read and write must be limited to the signed-in user's own rows. A request for another user's record must behave as "not found".
-- All validation in this document must be enforced on the server. Client-side checks are for convenience only.
+- Every validation runs on the client first and then again on the server, as section 12.1 defines. The server never assumes that the client has checked anything.
 - Sign-in must be rate-limited per username and per address to slow guessing.
 
 ## 4. Data model
@@ -614,9 +614,41 @@ All user-entered text (names, plates, notes) must be displayed as plain text. It
 - While any dialog, sheet or selector list is open, the page behind it must not scroll, and it must return to the same place when the dialog closes. Scrolling inside the dialog must not scroll the page.
 - Controls must have a touch target of at least 40px.
 
-## 12. Errors
+## 12. Validation and errors
+
+### 12.1 Validation order
+
+Every validation in this document runs twice, in this order:
+
+1. **Client first.** The app checks the input before sending anything. If a check fails, the app shows the error and sends nothing to the server.
+2. **Server second.** When the client checks pass, the request is sent, and the server runs every check again. If a check fails there, the server rejects the whole request and saves nothing.
+
+Rules:
+
+- Client validation is required, not optional. Every rule in this document that the client is able to check must be checked on the client.
+- The server is the authority. It must apply every rule to every request, whether or not the request came from the app.
+- The client and the server must apply the same rules with the same limits. A value the client accepts must not be rejected by the server for a rule the client could have checked.
+- The rules must be kept in step. When a rule changes, it changes on both sides in the same release.
+
+### 12.2 Which side checks what
+
+| Kind of rule | Examples | Client | Server |
+|---|---|---|---|
+| Required fields | Vehicle, date, cost, energy; provider for Public; display name | Checks | Checks again |
+| Format and range | Cost at most two decimals; energy at most one decimal; battery 0–100; username 3–32 characters; password at least 8 characters; budget greater than zero | Checks | Checks again |
+| Consistency within a form | Password matches confirmation; no provider or branch for Home | Checks | Checks again |
+| Duplicates within the user's own lists | Vehicle name; provider name; branch name within its provider | Checks against the lists it has loaded, ignoring letter case | Checks again against the database |
+| Rules that need data the client does not hold | Username already taken; record belongs to the signed-in user; branch belongs to its provider | Cannot check | Checks |
+| Delete rules | Vehicle, provider or branch still used by sessions | Checks against the data it has loaded | Checks again |
+| Photo | JPEG, at most 1024 × 1024 pixels, at most 1 MB | Produces the photo within these limits | Checks again and rejects anything else |
+
+The client's lists can be out of date, for example when the same account is used on two devices. The server's result is final.
+
+### 12.3 Showing errors
 
 - Validation errors appear in the app, next to the field or inside the dialog. The browser's own alert and prompt boxes must not be used.
+- A server validation error is shown in the same place and with the same wording as the matching client error. The form stays open with its content.
+- The server returns each error as a code with the field it belongs to. The client shows the phrase for that code in the selected language.
 - If a save fails because the server cannot be reached, the form stays open with its content, and a message says the change was not saved.
 - If the sign-in session has expired, the app returns to the sign-in screen and says so.
 
@@ -651,7 +683,7 @@ The app must be installable on a phone's home screen as a progressive web app.
 ## 14. System constraints
 
 - The system is a web client and a server. The server owns the SQLite database and is the only component that reads or writes it.
-- The client talks to the server over HTTPS. The shape of the interface between them is the implementer's choice, as long as every rule in this document is enforced on the server.
+- The client talks to the server over HTTPS. The shape of the interface between them is the implementer's choice, as long as every rule in this document is validated on the client first and enforced again on the server (section 12.1).
 - Creating an account with its starting data must be a single transaction. Saving a session with its photo row must be a single transaction, with the photo file handled as section 4.6 defines.
 - The location of the `data` folder must be configurable. The server must be the only process that writes to it.
 - Dashboard figures may be calculated on the server or on the client, but both must give the results defined in sections 6.2 and 7.
